@@ -695,4 +695,5 @@ Tip: You can download and remove dictionaries by going to &lt;b>Language &amp; i
     <string name="study_action_settings">Settings</string>
     <string name="study_yourpassword_title">Your password is:</string>
     <string name="study_yourpassword_action">Please enter your password below to login.</string>
+    <string name="study_yourpassword_progress">Generating your password...</string>
 </resources>
