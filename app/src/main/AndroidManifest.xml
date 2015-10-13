@@ -147,7 +147,8 @@
         <activity
             android:name="at.jku.fim.inputstudy.StudyActivity"
             android:icon="@mipmap/ic_launcher"
-            android:label="@string/study_title" >
+            android:label="@string/study_title"
+            android:theme="@style/AppTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
