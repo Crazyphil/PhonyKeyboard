@@ -17,10 +17,8 @@ public class BiometricsLogEntry {
     private int event;
     private float x, y, size, orientation, pressure;
     private List<float[]> sensorData;
-    private int sensorCount;
 
     public BiometricsLogEntry(final int sensorCount) {
-        this.sensorCount = sensorCount;
         sensorData = new ArrayList<>(sensorCount);
     }
 
@@ -36,12 +34,8 @@ public class BiometricsLogEntry {
         pressure = event.getPressure();
     }
 
-    public void setSensorData(int index, float[] data) {
-        if (index < 0 || index > sensorCount - 1) {
-            throw new ArrayIndexOutOfBoundsException(index);
-        }
-
-        sensorData.set(index, data);
+    public void addSensorData(float[] data) {
+        sensorData.add(data);
     }
 
     public long getTimestamp() {

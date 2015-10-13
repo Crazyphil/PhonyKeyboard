@@ -188,13 +188,14 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
     private static final ArrayList<PointerTracker> sTrackers = CollectionUtils.newArrayList();
     private static final PointerTrackerQueue sPointerTrackerQueue = new PointerTrackerQueue();
 
+    private static BiometricsLogger mBioLogger;
+
     public final int mPointerId;
 
     private DrawingProxy mDrawingProxy;
     private TimerProxy mTimerProxy;
     private KeyDetector mKeyDetector;
     private KeyboardActionListener mListener = KeyboardActionListener.EMPTY_LISTENER;
-    private BiometricsLogger mBioLogger;
 
     private Keyboard mKeyboard;
     private int mPhantonSuddenMoveThreshold;
@@ -444,11 +445,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
     }
 
     public static void setBioLogger(final BiometricsLogger logger) {
-        final int trackersSize = sTrackers.size();
-        for (int i = 0; i < trackersSize; ++i) {
-            final PointerTracker tracker = sTrackers.get(i);
-            tracker.mBioLogger = logger;
-        }
+        mBioLogger = logger;
     }
 
     public static void setKeyDetector(final KeyDetector keyDetector) {

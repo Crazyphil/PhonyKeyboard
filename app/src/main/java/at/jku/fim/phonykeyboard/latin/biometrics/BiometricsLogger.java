@@ -7,7 +7,6 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
 import android.util.Log;
-import android.view.Display;
 import android.view.MotionEvent;
 import android.view.WindowManager;
 
@@ -16,7 +15,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.Date;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -27,29 +25,32 @@ import at.jku.fim.phonykeyboard.keyboard.Key;
 import at.jku.fim.phonykeyboard.latin.utils.CsvUtils;
 
 public class BiometricsLogger implements SensorEventListener {
-    private final Context context;
+    private Context context;
     private SensorManager sensorManager;
+    private final int[] sensorTypes;
     private Dictionary<Sensor, float[]> sensors = new Hashtable<>();
     private Writer logStream;
 
-    private static final String TAG = "at.jku.fim.phonykbd";
+    private static final String TAG = "BiometricsLogger";
     private static final String LOG_FILE = "biometrics_log.csv";
+    private static final float[] EMPTY_SENSOR_DATA = new float[0];
 
     public BiometricsLogger(Context context) {
-        int[] sensorTypes;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
             sensorTypes = new int[] { Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_GRAVITY, Sensor.TYPE_GYROSCOPE, Sensor.TYPE_GYROSCOPE_UNCALIBRATED, Sensor.TYPE_LINEAR_ACCELERATION, Sensor.TYPE_ROTATION_VECTOR };
         }
         else {
             sensorTypes = new int[] { Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_GRAVITY, Sensor.TYPE_GYROSCOPE, Sensor.TYPE_LINEAR_ACCELERATION, Sensor.TYPE_ROTATION_VECTOR };
         }
+    }
 
+    public void init(Context context) {
         this.context = context;
         sensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
 
         for (int sensorType : sensorTypes){
             if (sensorManager.getDefaultSensor(sensorType) != null) {
-                sensors.put(sensorManager.getDefaultSensor(sensorType), null);
+                sensors.put(sensorManager.getDefaultSensor(sensorType), EMPTY_SENSOR_DATA);
             }
         }
     }
@@ -96,11 +97,9 @@ public class BiometricsLogger implements SensorEventListener {
         entry.setProperties(eventType, key, event, getScreenOrientation());
 
         Enumeration<Sensor> sensorEnum = sensors.keys();
-        int i = 0;
         while (sensorEnum.hasMoreElements()) {
             Sensor sensor = sensorEnum.nextElement();
-            entry.setSensorData(i, sensors.get(sensor));
-            i++;
+            entry.addSensorData(sensors.get(sensor));
         }
 
         writeLogEntry(entry);
@@ -229,7 +228,7 @@ public class BiometricsLogger implements SensorEventListener {
     }
 
     private String arrayToString(float[] array) {
-        StringBuilder sb = new StringBuilder(array.length * 2 + 1);
+        StringBuilder sb = new StringBuilder(1 + Math.max(array.length * 2, 1));
         sb.append("[");
         for (float f : array) {
             if (sb.length() > 1) {

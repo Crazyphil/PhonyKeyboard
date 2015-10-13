@@ -546,6 +546,7 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
         loadSettings();
         initSuggest();
 
+        mBioLogger.init(this);
         mBioLogger.onCreate();
         if (ProductionFlag.USES_DEVELOPMENT_ONLY_DIAGNOSTICS) {
             ResearchLogger.getInstance().init(this, mKeyboardSwitcher, mSuggest);
