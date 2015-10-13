@@ -38,7 +38,7 @@ public class PasswordGenerator {
 
         int firstDigit = (int)(Math.random() * 10);
         int lastDigit = (int)(Math.random() * 10);
-        return firstDigit + c.getString(c.getColumnIndex(WordsContract.Words.COLUMN_NAME_WORD)) + lastDigit;
+        return firstDigit + c.getString(c.getColumnIndex(WordsContract.Words.COLUMN_NAME_WORD)).toLowerCase() + lastDigit;
     }
 
     private void ensureDatabase() {
