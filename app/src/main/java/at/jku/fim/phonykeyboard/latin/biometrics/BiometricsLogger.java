@@ -6,12 +6,15 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
+import android.os.Environment;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.WindowManager;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -35,7 +38,7 @@ public class BiometricsLogger implements SensorEventListener {
     private static final String LOG_FILE = "biometrics_log.csv";
     private static final float[] EMPTY_SENSOR_DATA = new float[0];
 
-    public BiometricsLogger(Context context) {
+    public BiometricsLogger() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
             sensorTypes = new int[] { Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_GRAVITY, Sensor.TYPE_GYROSCOPE, Sensor.TYPE_GYROSCOPE_UNCALIBRATED, Sensor.TYPE_LINEAR_ACCELERATION, Sensor.TYPE_ROTATION_VECTOR };
         }
@@ -65,8 +68,6 @@ public class BiometricsLogger implements SensorEventListener {
     }
 
     public void onCreate() {
-        openOrCreateLog(context);
-
         Enumeration<Sensor> sensorEnum = sensors.keys();
         while (sensorEnum.hasMoreElements()) {
             Sensor sensor = sensorEnum.nextElement();
@@ -75,13 +76,21 @@ public class BiometricsLogger implements SensorEventListener {
     }
 
     public void onDestroy() {
+        sensorManager.unregisterListener(this);
+    }
+
+    public void onShowWindow() {
+        openOrCreateLog(context);
+    }
+
+    public void onHideWindow() {
         try {
             logStream.close();
+        } catch (IOException e) {
+            Log.e(TAG, "Couldn't close biometrics log file", e);
+        } finally {
+            logStream = null;
         }
-        catch (IOException e) {
-            // Nothing to do if closing a stream fails
-        }
-        sensorManager.unregisterListener(this);
     }
 
     public void onKeyDown(final Key key, final MotionEvent event) {
@@ -106,19 +115,37 @@ public class BiometricsLogger implements SensorEventListener {
     }
 
     private void openOrCreateLog(Context context) {
-        String[] privateFiles = context.fileList();
+        if (logStream != null) {
+            return;
+        }
+
+        String[] privateFiles;
+        boolean isExternal = Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED);
+        if (isExternal) {
+            Log.d(TAG, "Using external storage for biometrics log");
+            privateFiles = context.getExternalFilesDir(null).list();
+        } else {
+            Log.d(TAG, "Using internal storage for biometrics log");
+            privateFiles = context.fileList();
+        }
+
         boolean exists = false;
         for (String filename : privateFiles) {
             if (filename.equals(LOG_FILE)) {
+                Log.d(TAG, "Biometrics log already exists, appending");
                 exists = true;
             }
         }
 
         try {
-            logStream = new BufferedWriter(new OutputStreamWriter(context.openFileOutput(LOG_FILE, Context.MODE_APPEND)));
+            if (isExternal) {
+                logStream = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(context.getExternalFilesDir(null), LOG_FILE), true)));
+            } else {
+                logStream = new BufferedWriter(new OutputStreamWriter(context.openFileOutput(LOG_FILE, Context.MODE_APPEND)));
+            }
         }
         catch (FileNotFoundException e) {
-            Log.e(TAG, "Log output file not found", e);
+            Log.e(TAG, "Biometrics log output file not found", e);
         }
         if (!exists) {
             writeCSVHeader();
@@ -126,8 +153,6 @@ public class BiometricsLogger implements SensorEventListener {
     }
 
     private void writeCSVHeader() {
-        if (logStream == null) return;
-
         List<String> fields = new LinkedList<>();
         fields.add("Timestamp");
         fields.add("ScreenOrientation");
@@ -145,6 +170,7 @@ public class BiometricsLogger implements SensorEventListener {
         }
         try {
             logStream.write(CsvUtils.join(fields.toArray(new String[fields.size()])));
+            logStream.write("\r\n");
         }
         catch (IOException e) {
             Log.e(TAG, "I/O error writing CSV header", e);
@@ -169,6 +195,7 @@ public class BiometricsLogger implements SensorEventListener {
         }
         try {
             logStream.write(CsvUtils.join(fields.toArray(new String[fields.size()])));
+            logStream.write("\r\n");
         }
         catch (IOException e) {
             Log.e(TAG, String.format("I/O error writing %s event", entry.eventToString()), e);
@@ -218,6 +245,7 @@ public class BiometricsLogger implements SensorEventListener {
                 case Sensor.TYPE_STEP_DETECTOR:
                     return "StepDetector";
             }
+            Log.w(TAG, "Couldn't resolve sensor to type: " + sensor.toString());
             return null;
         }
     }

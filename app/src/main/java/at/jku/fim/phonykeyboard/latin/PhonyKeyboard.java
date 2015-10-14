@@ -519,7 +519,7 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
         mSettings = Settings.getInstance();
         mSubtypeSwitcher = SubtypeSwitcher.getInstance();
         mKeyboardSwitcher = KeyboardSwitcher.getInstance();
-        mBioLogger = new BiometricsLogger(this);
+        mBioLogger = new BiometricsLogger();
         mIsHardwareAcceleratedDrawingEnabled =
                 InputMethodServiceCompatUtils.enableHardwareAcceleration(this);
         Log.i(TAG, "Hardware accelerated drawing: " + mIsHardwareAcceleratedDrawingEnabled);
@@ -1202,6 +1202,7 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
     public void hideWindow() {
         LatinImeLogger.commit();
         mKeyboardSwitcher.onHideWindow();
+        mBioLogger.onHideWindow();
 
         if (AccessibilityUtils.getInstance().isAccessibilityEnabled()) {
             AccessibleKeyboardViewProxy.getInstance().onHideWindow();
@@ -1213,6 +1214,12 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
             mOptionsDialog = null;
         }
         super.hideWindow();
+    }
+
+    @Override
+    public void showWindow(boolean showInput) {
+        mBioLogger.onShowWindow();
+        super.showWindow(showInput);
     }
 
     @Override
