@@ -2,6 +2,7 @@ package at.jku.fim.inputstudy;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -43,10 +44,17 @@ public class StudyActivity extends AppCompatActivity {
                 if (passwordEditText.getText().toString().equals(password)) {
                     builder.setTitle("Correct");
                     builder.setMessage("Now you would be logged in.");
+                    new GeneratePasswordTask().execute();
                 } else {
                     builder.setTitle("Wrong");
                     builder.setMessage("Now you would have to try again.");
                 }
+                builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
                 builder.show();
 
                 passwordEditText.setText("");
