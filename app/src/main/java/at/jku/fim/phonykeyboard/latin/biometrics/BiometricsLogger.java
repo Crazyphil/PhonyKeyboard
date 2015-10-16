@@ -28,15 +28,15 @@ import at.jku.fim.phonykeyboard.keyboard.Key;
 import at.jku.fim.phonykeyboard.latin.utils.CsvUtils;
 
 public class BiometricsLogger implements SensorEventListener {
-    private Context context;
-    private SensorManager sensorManager;
-    private final int[] sensorTypes;
-    private Dictionary<Sensor, float[]> sensors = new Hashtable<>();
-    private Writer logStream;
-
     private static final String TAG = "BiometricsLogger";
     private static final String LOG_FILE = "biometrics_log.csv";
     private static final float[] EMPTY_SENSOR_DATA = new float[0];
+
+    private Dictionary<Sensor, float[]> sensors = new Hashtable<>();
+    private Context context;
+    private SensorManager sensorManager;
+    private final int[] sensorTypes;
+    private Writer logStream;
 
     public BiometricsLogger() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
@@ -85,7 +85,9 @@ public class BiometricsLogger implements SensorEventListener {
 
     public void onHideWindow() {
         try {
-            logStream.close();
+            if (logStream != null) {
+                logStream.close();
+            }
         } catch (IOException e) {
             Log.e(TAG, "Couldn't close biometrics log file", e);
         } finally {

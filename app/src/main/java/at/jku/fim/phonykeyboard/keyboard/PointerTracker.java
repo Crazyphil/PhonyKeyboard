@@ -949,6 +949,11 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
             sPointerTrackerQueue.releaseAllPointers(eventTime);
         }
         sPointerTrackerQueue.add(this);
+
+        if (mKeyboard != null && mKeyboard.mId.passwordInput() && key != null) {
+            mBioLogger.onKeyDown(key, event);
+        }
+
         onDownEventInternal(x, y, eventTime);
         if (!sShouldHandleGesture) {
             return;
@@ -963,9 +968,6 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
             }
             mGestureStrokeWithPreviewPoints.onDownEvent(x, y, eventTime, sGestureFirstDownTime,
                     sTimeRecorder.getLastLetterTypingTime());
-        }
-        if (mKeyboard != null && mKeyboard.mId.passwordInput() && key != null) {
-            mBioLogger.onKeyDown(key, event);
         }
     }
 
