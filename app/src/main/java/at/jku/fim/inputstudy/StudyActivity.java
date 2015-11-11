@@ -118,8 +118,12 @@ public class StudyActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String result) {
             password = result;
-            passwordTextView.setText(password);
-            progressDialog.dismiss();
+            if (passwordTextView != null) {
+                passwordTextView.setText(password);
+            }
+            if (progressDialog != null) {
+                progressDialog.dismiss();
+            }
         }
     }
 }
