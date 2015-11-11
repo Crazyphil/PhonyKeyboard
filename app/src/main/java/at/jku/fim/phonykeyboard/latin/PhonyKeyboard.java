@@ -76,6 +76,7 @@ import at.jku.fim.phonykeyboard.keyboard.MainKeyboardView;
 import at.jku.fim.phonykeyboard.latin.Suggest.OnGetSuggestedWordsCallback;
 import at.jku.fim.phonykeyboard.latin.SuggestedWords.SuggestedWordInfo;
 import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsLogger;
+import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManager;
 import at.jku.fim.phonykeyboard.latin.define.ProductionFlag;
 import at.jku.fim.phonykeyboard.latin.personalization.DictionaryDecayBroadcastReciever;
 import at.jku.fim.phonykeyboard.latin.personalization.PersonalizationDictionary;
@@ -222,8 +223,6 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
 
     public final UIHandler mHandler = new UIHandler(this);
     private InputUpdater mInputUpdater;
-
-    private BiometricsLogger mBioLogger;
 
     public static final class UIHandler extends StaticInnerHandlerWrapper<PhonyKeyboard> {
         private static final int MSG_UPDATE_SHIFT_STATE = 0;
@@ -519,7 +518,6 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
         mSettings = Settings.getInstance();
         mSubtypeSwitcher = SubtypeSwitcher.getInstance();
         mKeyboardSwitcher = KeyboardSwitcher.getInstance();
-        mBioLogger = new BiometricsLogger();
         mIsHardwareAcceleratedDrawingEnabled =
                 InputMethodServiceCompatUtils.enableHardwareAcceleration(this);
         Log.i(TAG, "Hardware accelerated drawing: " + mIsHardwareAcceleratedDrawingEnabled);
@@ -546,8 +544,8 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
         loadSettings();
         initSuggest();
 
-        mBioLogger.init(this);
-        mBioLogger.onCreate();
+        new BiometricsLogger().init(this);
+        BiometricsManager.getInstance().onCreate();
         if (ProductionFlag.USES_DEVELOPMENT_ONLY_DIAGNOSTICS) {
             ResearchLogger.getInstance().init(this, mKeyboardSwitcher, mSuggest);
         }
@@ -708,7 +706,7 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
         }
         mSettings.onDestroy();
         unregisterReceiver(mReceiver);
-        mBioLogger.onDestroy();
+        BiometricsManager.getInstance().onDestroy();
         if (ProductionFlag.USES_DEVELOPMENT_ONLY_DIAGNOSTICS) {
             ResearchLogger.getInstance().onDestroy();
         }
@@ -1202,7 +1200,7 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
     public void hideWindow() {
         LatinImeLogger.commit();
         mKeyboardSwitcher.onHideWindow();
-        mBioLogger.onHideWindow();
+        BiometricsManager.getInstance().onHideWindow();
 
         if (AccessibilityUtils.getInstance().isAccessibilityEnabled()) {
             AccessibleKeyboardViewProxy.getInstance().onHideWindow();
@@ -1218,7 +1216,7 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
 
     @Override
     public void showWindow(boolean showInput) {
-        mBioLogger.onShowWindow();
+        BiometricsManager.getInstance().onShowWindow();
         super.showWindow(showInput);
     }
 
@@ -1261,10 +1259,6 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
         if (ProductionFlag.USES_DEVELOPMENT_ONLY_DIAGNOSTICS) {
             ResearchLogger.latinIME_onDisplayCompletions(applicationSpecifiedCompletions);
         }
-    }
-
-    public BiometricsLogger getBioLogger() {
-        return mBioLogger;
     }
 
     private void setSuggestionStripShownInternal(final boolean shown,

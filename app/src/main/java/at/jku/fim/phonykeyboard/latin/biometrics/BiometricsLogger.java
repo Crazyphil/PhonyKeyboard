@@ -2,14 +2,10 @@ package at.jku.fim.phonykeyboard.latin.biometrics;
 
 import android.content.Context;
 import android.hardware.Sensor;
-import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
-import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.WindowManager;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -18,66 +14,18 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.Dictionary;
 import java.util.Enumeration;
-import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 
 import at.jku.fim.phonykeyboard.keyboard.Key;
 import at.jku.fim.phonykeyboard.latin.utils.CsvUtils;
 
-public class BiometricsLogger implements SensorEventListener {
+public class BiometricsLogger extends BiometricsManager implements SensorEventListener {
     private static final String TAG = "BiometricsLogger";
     private static final String LOG_FILE = "biometrics_log.csv";
-    private static final float[] EMPTY_SENSOR_DATA = new float[0];
 
-    private Dictionary<Sensor, float[]> sensors = new Hashtable<>();
-    private Context context;
-    private SensorManager sensorManager;
-    private final int[] sensorTypes;
     private Writer logStream;
-
-    public BiometricsLogger() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-            sensorTypes = new int[] { Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_GRAVITY, Sensor.TYPE_GYROSCOPE, Sensor.TYPE_GYROSCOPE_UNCALIBRATED, Sensor.TYPE_LINEAR_ACCELERATION, Sensor.TYPE_ROTATION_VECTOR };
-        }
-        else {
-            sensorTypes = new int[] { Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_GRAVITY, Sensor.TYPE_GYROSCOPE, Sensor.TYPE_LINEAR_ACCELERATION, Sensor.TYPE_ROTATION_VECTOR };
-        }
-    }
-
-    public void init(Context context) {
-        this.context = context;
-        sensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
-
-        for (int sensorType : sensorTypes){
-            if (sensorManager.getDefaultSensor(sensorType) != null) {
-                sensors.put(sensorManager.getDefaultSensor(sensorType), EMPTY_SENSOR_DATA);
-            }
-        }
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        sensors.put(event.sensor, event.values);
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-    }
-
-    public void onCreate() {
-        Enumeration<Sensor> sensorEnum = sensors.keys();
-        while (sensorEnum.hasMoreElements()) {
-            Sensor sensor = sensorEnum.nextElement();
-            sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME);
-        }
-    }
-
-    public void onDestroy() {
-        sensorManager.unregisterListener(this);
-    }
 
     public void onShowWindow() {
         openOrCreateLog(context);
@@ -96,21 +44,21 @@ public class BiometricsLogger implements SensorEventListener {
     }
 
     public void onKeyDown(final Key key, final MotionEvent event) {
-        onKeyEvent(BiometricsLogEntry.EVENT_DOWN, key, event);
+        onKeyEvent(EVENT_DOWN, key, event);
     }
 
     public void onKeyUp(final Key key, final MotionEvent event) {
-        onKeyEvent(BiometricsLogEntry.EVENT_UP, key, event);
+        onKeyEvent(EVENT_UP, key, event);
     }
 
     private void onKeyEvent(int eventType, Key key, MotionEvent event) {
-        BiometricsLogEntry entry = new BiometricsLogEntry(sensors.size());
+        BiometricsEntry entry = new BiometricsEntry(getSensors().size());
         entry.setProperties(eventType, key, event, getScreenOrientation());
 
-        Enumeration<Sensor> sensorEnum = sensors.keys();
+        Enumeration<Sensor> sensorEnum = getSensors().keys();
         while (sensorEnum.hasMoreElements()) {
             Sensor sensor = sensorEnum.nextElement();
-            entry.addSensorData(sensors.get(sensor));
+            entry.addSensorData(getSensors().get(sensor));
         }
 
         writeLogEntry(entry);
@@ -165,7 +113,7 @@ public class BiometricsLogger implements SensorEventListener {
         fields.add("Size");
         fields.add("Orientation");
         fields.add("Pressure");
-        Enumeration<Sensor> sensorEnum = sensors.keys();
+        Enumeration<Sensor> sensorEnum = getSensors().keys();
         while (sensorEnum.hasMoreElements()) {
             Sensor sensor = sensorEnum.nextElement();
             fields.add(getSensorType(sensor));
@@ -179,7 +127,7 @@ public class BiometricsLogger implements SensorEventListener {
         }
     }
 
-    private void writeLogEntry(BiometricsLogEntry entry) {
+    private void writeLogEntry(BiometricsEntry entry) {
         List<String> fields = new LinkedList<>();
         fields.add(Long.toString(entry.getTimestamp()));
         fields.add(Integer.toString(entry.getScreenOrientation()));
@@ -190,11 +138,10 @@ public class BiometricsLogger implements SensorEventListener {
         fields.add(Float.toString(entry.getSize()));
         fields.add(Float.toString(entry.getOrientation()));
         fields.add(Float.toString(entry.getPressure()));
-        Enumeration<Sensor> sensorEnum = sensors.keys();
-        while (sensorEnum.hasMoreElements()) {
-            Sensor sensor = sensorEnum.nextElement();
-            fields.add(arrayToString(sensors.get(sensor)));
+        for (float[] data : entry.getSensorData()) {
+            fields.add(arrayToString(data));
         }
+
         try {
             logStream.write(CsvUtils.join(fields.toArray(new String[fields.size()])));
             logStream.write("\r\n");
@@ -204,69 +151,14 @@ public class BiometricsLogger implements SensorEventListener {
         }
     }
 
-    private String getSensorType(Sensor sensor) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-            return sensor.getStringType();
-        }
-        else {
-            switch (sensor.getType()) {
-                case Sensor.TYPE_ACCELEROMETER:
-                    return "Accelerometer";
-                case Sensor.TYPE_AMBIENT_TEMPERATURE:
-                    return "AmbientTemperature";
-                case Sensor.TYPE_GAME_ROTATION_VECTOR:
-                    return "GameRotationVector";
-                case Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR:
-                    return "GeomagneticRotationVector";
-                case Sensor.TYPE_GRAVITY:
-                    return "Gravity";
-                case Sensor.TYPE_GYROSCOPE:
-                    return "Gyroscope";
-                case Sensor.TYPE_HEART_RATE:
-                    return "Heartrate";
-                case Sensor.TYPE_LIGHT:
-                    return "Light";
-                case Sensor.TYPE_LINEAR_ACCELERATION:
-                    return "LinearAcceleration";
-                case Sensor.TYPE_MAGNETIC_FIELD:
-                    return "MagneticField";
-                case Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED:
-                    return "MagneticFieldUncalibrated";
-                case Sensor.TYPE_PRESSURE:
-                    return "Pressure";
-                case Sensor.TYPE_PROXIMITY:
-                    return "Proximity";
-                case Sensor.TYPE_RELATIVE_HUMIDITY:
-                    return "RelativeHumidity";
-                case Sensor.TYPE_ROTATION_VECTOR:
-                    return "RotationVector";
-                case Sensor.TYPE_SIGNIFICANT_MOTION:
-                    return "SignificantMotion";
-                case Sensor.TYPE_STEP_COUNTER:
-                    return "StepCounter";
-                case Sensor.TYPE_STEP_DETECTOR:
-                    return "StepDetector";
-            }
-            Log.w(TAG, "Couldn't resolve sensor to type: " + sensor.toString());
-            return null;
-        }
-    }
-
-    private int getScreenOrientation() {
-        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        return wm.getDefaultDisplay().getRotation();
-    }
-
     private String arrayToString(float[] array) {
-        StringBuilder sb = new StringBuilder(1 + Math.max(array.length * 2, 1));
-        sb.append("[");
+        StringBuilder sb = new StringBuilder(Math.max(array.length * 2 - 1, 0));
         for (float f : array) {
             if (sb.length() > 1) {
                 sb.append(",");
             }
             sb.append(Float.toString(f));
         }
-        sb.append("]");
         return sb.toString();
     }
 }

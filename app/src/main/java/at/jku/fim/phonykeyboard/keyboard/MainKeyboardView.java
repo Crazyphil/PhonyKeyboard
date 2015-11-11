@@ -60,7 +60,6 @@ import at.jku.fim.phonykeyboard.latin.Constants;
 import at.jku.fim.phonykeyboard.latin.LatinImeLogger;
 import at.jku.fim.phonykeyboard.latin.R;
 import at.jku.fim.phonykeyboard.latin.SuggestedWords;
-import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsLogger;
 import at.jku.fim.phonykeyboard.latin.define.ProductionFlag;
 import at.jku.fim.phonykeyboard.latin.settings.DebugSettings;
 import at.jku.fim.phonykeyboard.latin.utils.CollectionUtils;
@@ -121,8 +120,6 @@ public final class MainKeyboardView extends KeyboardView implements PointerTrack
 
     /** Listener for {@link KeyboardActionListener}. */
     private KeyboardActionListener mKeyboardActionListener;
-
-    private BiometricsLogger mBioLogger;
 
     /* Space key and its icons */
     private Key mSpaceKey;
@@ -574,12 +571,6 @@ public final class MainKeyboardView extends KeyboardView implements PointerTrack
     public void setKeyboardActionListener(final KeyboardActionListener listener) {
         mKeyboardActionListener = listener;
         PointerTracker.setKeyboardActionListener(listener);
-    }
-
-
-    public void setBioLogger(BiometricsLogger bioLogger) {
-        mBioLogger = bioLogger;
-        PointerTracker.setBioLogger(bioLogger);
     }
 
     /**

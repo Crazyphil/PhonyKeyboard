@@ -33,7 +33,7 @@ import at.jku.fim.phonykeyboard.latin.Constants;
 import at.jku.fim.phonykeyboard.latin.InputPointers;
 import at.jku.fim.phonykeyboard.latin.LatinImeLogger;
 import at.jku.fim.phonykeyboard.latin.R;
-import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsLogger;
+import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManager;
 import at.jku.fim.phonykeyboard.latin.define.ProductionFlag;
 import at.jku.fim.phonykeyboard.latin.settings.Settings;
 import at.jku.fim.phonykeyboard.latin.utils.CollectionUtils;
@@ -187,8 +187,6 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
 
     private static final ArrayList<PointerTracker> sTrackers = CollectionUtils.newArrayList();
     private static final PointerTrackerQueue sPointerTrackerQueue = new PointerTrackerQueue();
-
-    private static BiometricsLogger mBioLogger;
 
     public final int mPointerId;
 
@@ -442,10 +440,6 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
             final PointerTracker tracker = sTrackers.get(i);
             tracker.mListener = listener;
         }
-    }
-
-    public static void setBioLogger(final BiometricsLogger logger) {
-        mBioLogger = logger;
     }
 
     public static void setKeyDetector(final KeyDetector keyDetector) {
@@ -951,7 +945,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
         sPointerTrackerQueue.add(this);
 
         if (mKeyboard != null && mKeyboard.mId.passwordInput() && key != null) {
-            mBioLogger.onKeyDown(key, event);
+            BiometricsManager.getInstance().onKeyDown(key, event);
         }
 
         onDownEventInternal(x, y, eventTime);
@@ -1084,7 +1078,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
         }
         onMoveToNewKey(key, x, y);
         if (mKeyboard != null && mKeyboard.mId.passwordInput()) {
-            mBioLogger.onKeyUp(key, event);
+            BiometricsManager.getInstance().onKeyUp(key, event);
         }
         if (mIsTrackingForActionDisabled) {
             return;
@@ -1134,7 +1128,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
         setReleasedKeyGraphics(oldKey);
         callListenerOnRelease(oldKey, oldKey.getCode(), true /* withSliding */);
         if (mKeyboard != null && mKeyboard.mId.passwordInput()) {
-            mBioLogger.onKeyUp(oldKey, event);
+            BiometricsManager.getInstance().onKeyUp(oldKey, event);
         }
         startSlidingKeyInput(oldKey);
         mTimerProxy.cancelKeyTimers();
@@ -1251,7 +1245,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
         if (event != null && mKeyboard != null && mKeyboard.mId.passwordInput() && mCurrentKey != null) {
             // event can be null if the user is sliding from one key to another, because then the up event
             // is already sent in processSildeOutFromOldKey()
-            mBioLogger.onKeyUp(mCurrentKey, event);
+            BiometricsManager.getInstance().onKeyUp(mCurrentKey, event);
         }
         onUpEventInternal(x, y, eventTime);
         sPointerTrackerQueue.remove(this);
@@ -1346,7 +1340,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
         }
 
         if (mKeyboard != null && mKeyboard.mId.passwordInput() && mCurrentKey != null) {
-            mBioLogger.onKeyUp(mCurrentKey, event);
+            BiometricsManager.getInstance().onKeyUp(mCurrentKey, event);
         }
 
         cancelBatchInput();

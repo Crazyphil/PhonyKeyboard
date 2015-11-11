@@ -37,7 +37,6 @@ import at.jku.fim.phonykeyboard.latin.R;
 import at.jku.fim.phonykeyboard.latin.RichInputMethodManager;
 import at.jku.fim.phonykeyboard.latin.SubtypeSwitcher;
 import at.jku.fim.phonykeyboard.latin.WordComposer;
-import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsLogger;
 import at.jku.fim.phonykeyboard.latin.settings.Settings;
 import at.jku.fim.phonykeyboard.latin.settings.SettingsValues;
 import at.jku.fim.phonykeyboard.latin.utils.ResourceUtils;
@@ -385,7 +384,6 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
         mKeyboardView = (MainKeyboardView) mCurrentInputView.findViewById(R.id.keyboard_view);
         mKeyboardView.setHardwareAcceleratedDrawingEnabled(isHardwareAcceleratedDrawingEnabled);
         mKeyboardView.setKeyboardActionListener(mPhonyKeyboard);
-        mKeyboardView.setBioLogger(mPhonyKeyboard.getBioLogger());
         mEmojiPalettesView.setHardwareAcceleratedDrawingEnabled(
                 isHardwareAcceleratedDrawingEnabled);
         mEmojiPalettesView.setKeyboardActionListener(mPhonyKeyboard);
