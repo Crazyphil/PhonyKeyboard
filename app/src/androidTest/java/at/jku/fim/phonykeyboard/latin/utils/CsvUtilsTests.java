@@ -155,12 +155,12 @@ public class CsvUtilsTests extends AndroidTestCase {
         assertArrayEquals(new String[]{"text"}, CsvUtils.split("text"));
         assertArrayEquals(new String[]{" a b "}, CsvUtils.split(" a b "));
 
-        assertArrayEquals(new String[]{"", ""}, CsvUtils.split(","));
-        assertArrayEquals(new String[]{"", "", ""}, CsvUtils.split(",,"));
-        assertArrayEquals(new String[]{" ", " "}, CsvUtils.split(" , "));
-        assertArrayEquals(new String[]{" ", " ", " "}, CsvUtils.split(" , , "));
-        assertArrayEquals(new String[]{"a", "b"}, CsvUtils.split("a,b"));
-        assertArrayEquals(new String[]{" a ", " b "}, CsvUtils.split(" a , b "));
+        assertArrayEquals(new String[]{"", ""}, CsvUtils.split(";"));
+        assertArrayEquals(new String[]{"", "", ""}, CsvUtils.split(";;"));
+        assertArrayEquals(new String[]{" ", " "}, CsvUtils.split(" ; "));
+        assertArrayEquals(new String[]{" ", " ", " "}, CsvUtils.split(" ; ; "));
+        assertArrayEquals(new String[]{"a", "b"}, CsvUtils.split("a;b"));
+        assertArrayEquals(new String[]{" a ", " b "}, CsvUtils.split(" a ; b "));
 
         assertArrayEquals(new String[]{"text"},
                 CsvUtils.split("\"text\"")); // "text"
@@ -172,20 +172,20 @@ public class CsvUtilsTests extends AndroidTestCase {
         assertArrayEquals(new String[]{"\""},
                 CsvUtils.split("\"\"\"\"")); // """"
         assertArrayEquals(new String[]{"", ""},
-                CsvUtils.split("\"\",\"\"")); // "",""
-        assertArrayEquals(new String[]{"\",\""},
-                CsvUtils.split("\"\"\",\"\"\"")); // ""","""
+                CsvUtils.split("\"\";\"\"")); // "",""
+        assertArrayEquals(new String[]{"\";\""},
+                CsvUtils.split("\"\"\";\"\"\"")); // ""","""
         assertArrayEquals(new String[]{"\"", "\""},
-                CsvUtils.split("\"\"\"\",\"\"\"\"")); // """",""""
-        assertArrayEquals(new String[]{"\"", "\",\""},
-                CsvUtils.split("\"\"\"\",\"\"\",\"\"\"")); // """",""","""
-        assertArrayEquals(new String[]{"\",\"", "\""},
-                CsvUtils.split("\"\"\",\"\"\",\"\"\"\"")); // """,""",""""
+                CsvUtils.split("\"\"\"\";\"\"\"\"")); // """",""""
+        assertArrayEquals(new String[]{"\"", "\";\""},
+                CsvUtils.split("\"\"\"\";\"\"\";\"\"\"")); // """",""","""
+        assertArrayEquals(new String[]{"\";\"", "\""},
+                CsvUtils.split("\"\"\";\"\"\";\"\"\"\"")); // """,""",""""
 
-        assertArrayEquals(new String[]{" a ", " b , c "},
-                CsvUtils.split(" a ,\" b , c \"")); // _a_,"_b_,_c_"
-        assertArrayEquals(new String[]{" a ", " b , c ", " d "},
-                CsvUtils.split(" a ,\" b , c \", d ")); // _a_,"_b_,_c_",_d_
+        assertArrayEquals(new String[]{" a ", " b ; c "},
+                CsvUtils.split(" a ;\" b ; c \"")); // _a_,"_b_,_c_"
+        assertArrayEquals(new String[]{" a ", " b ; c ", " d "},
+                CsvUtils.split(" a ;\" b ; c \"; d ")); // _a_,"_b_,_c_",_d_
     }
 
     public void testSplitException() {
@@ -203,37 +203,37 @@ public class CsvUtilsTests extends AndroidTestCase {
         }
 
         try {
-            final String[] fields = CsvUtils.split("a,\"b,"); // a,",b
+            final String[] fields = CsvUtils.split("a;\"b;"); // a,",b
             fail("Unterminated quote: fields=" + Arrays.toString(fields));
         } catch (final CsvParseException success) {
             assertEquals("Unterminated quote", success.getMessage());
         }
         try {
-            final String[] fields = CsvUtils.split("a,\"\"\",b"); // a,""",b
+            final String[] fields = CsvUtils.split("a;\"\"\";b"); // a,""",b
             fail("Unterminated quote: fields=" + Arrays.toString(fields));
         } catch (final CsvParseException success) {
             assertEquals("Unterminated quote", success.getMessage());
         }
         try {
-            final String[] fields = CsvUtils.split("a,\"\"\"\"\",b"); // a,""""",b
+            final String[] fields = CsvUtils.split("a;\"\"\"\"\";b"); // a,""""",b
             fail("Unterminated quote: fields=" + Arrays.toString(fields));
         } catch (final CsvParseException success) {
             assertEquals("Unterminated quote", success.getMessage());
         }
         try {
-            final String[] fields = CsvUtils.split("a,\"b,c"); // a,"b,c
+            final String[] fields = CsvUtils.split("a;\"b;c"); // a,"b,c
             fail("Unterminated quote: fields=" + Arrays.toString(fields));
         } catch (final CsvParseException success) {
             assertEquals("Unterminated quote", success.getMessage());
         }
         try {
-            final String[] fields = CsvUtils.split("a,\",\"b,c"); // a,","b,c
+            final String[] fields = CsvUtils.split("a;\";\"b;c"); // a,","b,c
             fail("Raw quote in quoted text: fields=" + Arrays.toString(fields));
         } catch (final CsvParseException success) {
             assertEquals("Raw quote in quoted text", success.getMessage());
         }
         try {
-            final String[] fields = CsvUtils.split("a,\",\"b\",\",c"); // a,","b",",c
+            final String[] fields = CsvUtils.split("a;\";\"b\";\";c"); // a,","b",",c
             fail("Raw quote in quoted text: fields=" + Arrays.toString(fields));
         } catch (final CsvParseException success) {
             assertEquals("Raw quote in quoted text", success.getMessage());
@@ -247,12 +247,12 @@ public class CsvUtilsTests extends AndroidTestCase {
         assertArrayEquals(new String[]{"text"}, CsvUtils.split(trimSpaces, "text"));
         assertArrayEquals(new String[]{"a b"}, CsvUtils.split(trimSpaces, " a b "));
 
-        assertArrayEquals(new String[]{"", ""}, CsvUtils.split(trimSpaces, ","));
-        assertArrayEquals(new String[]{"", "", ""}, CsvUtils.split(trimSpaces, ",,"));
-        assertArrayEquals(new String[]{"", ""}, CsvUtils.split(trimSpaces, " , "));
-        assertArrayEquals(new String[]{"", "", ""}, CsvUtils.split(trimSpaces, " , , "));
-        assertArrayEquals(new String[]{"a", "b"}, CsvUtils.split(trimSpaces, "a,b"));
-        assertArrayEquals(new String[]{"a", "b"}, CsvUtils.split(trimSpaces, " a , b "));
+        assertArrayEquals(new String[]{"", ""}, CsvUtils.split(trimSpaces, ";"));
+        assertArrayEquals(new String[]{"", "", ""}, CsvUtils.split(trimSpaces, ";;"));
+        assertArrayEquals(new String[]{"", ""}, CsvUtils.split(trimSpaces, " ; "));
+        assertArrayEquals(new String[]{"", "", ""}, CsvUtils.split(trimSpaces, " ; ; "));
+        assertArrayEquals(new String[]{"a", "b"}, CsvUtils.split(trimSpaces, "a;b"));
+        assertArrayEquals(new String[]{"a", "b"}, CsvUtils.split(trimSpaces, " a ; b "));
 
         assertArrayEquals(new String[]{"text"},
                 CsvUtils.split(trimSpaces, "\"text\"")); // "text"
@@ -263,27 +263,27 @@ public class CsvUtilsTests extends AndroidTestCase {
         assertArrayEquals(new String[]{" text "},
                 CsvUtils.split(trimSpaces, " \" text \" ")); // _"_text_"_
         assertArrayEquals(new String[]{"a", "b"},
-                CsvUtils.split(trimSpaces, " \"a\" , \"b\" ")); // _"a"_,_"b"_
+                CsvUtils.split(trimSpaces, " \"a\" ; \"b\" ")); // _"a"_,_"b"_
 
         assertArrayEquals(new String[]{""},
                 CsvUtils.split(trimSpaces, " \"\" ")); // _""_
         assertArrayEquals(new String[]{"\""},
                 CsvUtils.split(trimSpaces, " \"\"\"\" ")); // _""""_
         assertArrayEquals(new String[]{"", ""},
-                CsvUtils.split(trimSpaces, " \"\" , \"\" ")); // _""_,_""_
-        assertArrayEquals(new String[]{"\" , \""},
-                CsvUtils.split(trimSpaces, " \"\"\" , \"\"\" ")); // _"""_,_"""_
+                CsvUtils.split(trimSpaces, " \"\" ; \"\" ")); // _""_,_""_
+        assertArrayEquals(new String[]{"\" ; \""},
+                CsvUtils.split(trimSpaces, " \"\"\" ; \"\"\" ")); // _"""_,_"""_
         assertArrayEquals(new String[]{"\"", "\""},
-                CsvUtils.split(trimSpaces, " \"\"\"\" , \"\"\"\" ")); // _""""_,_""""_
-        assertArrayEquals(new String[]{"\"", "\" , \""},
-                CsvUtils.split(trimSpaces, " \"\"\"\" , \"\"\" , \"\"\" ")); // _""""_,_"""_,_"""_
-        assertArrayEquals(new String[]{"\" , \"", "\""},
-                CsvUtils.split(trimSpaces, " \"\"\" , \"\"\" , \"\"\"\" ")); // _"""_,_"""_,_""""_
+                CsvUtils.split(trimSpaces, " \"\"\"\" ; \"\"\"\" ")); // _""""_,_""""_
+        assertArrayEquals(new String[]{"\"", "\" ; \""},
+                CsvUtils.split(trimSpaces, " \"\"\"\" ; \"\"\" ; \"\"\" ")); // _""""_,_"""_,_"""_
+        assertArrayEquals(new String[]{"\" ; \"", "\""},
+                CsvUtils.split(trimSpaces, " \"\"\" ; \"\"\" ; \"\"\"\" ")); // _"""_,_"""_,_""""_
 
-        assertArrayEquals(new String[]{"a", " b , c "},
-                CsvUtils.split(trimSpaces, " a , \" b , c \" ")); // _a_,_"_b_,_c_"_
-        assertArrayEquals(new String[]{"a", " b , c ", "d"},
-                CsvUtils.split(trimSpaces, " a, \" b , c \" , d ")); // _a,_"_b_,_c_"_,_d_
+        assertArrayEquals(new String[]{"a", " b ; c "},
+                CsvUtils.split(trimSpaces, " a ; \" b ; c \" ")); // _a_,_"_b_,_c_"_
+        assertArrayEquals(new String[]{"a", " b ; c ", "d"},
+                CsvUtils.split(trimSpaces, " a; \" b ; c \" ; d ")); // _a,_"_b_,_c_"_,_d_
     }
 
     public void testEscape() {
@@ -295,14 +295,14 @@ public class CsvUtilsTests extends AndroidTestCase {
         assertEquals(" space-at-start", CsvUtils.escapeField(" space-at-start", false));
         assertEquals("space-at-end ", CsvUtils.escapeField("space-at-end ", false));
         assertEquals("a lot of spaces", CsvUtils.escapeField("a lot of spaces", false));
-        assertEquals("\",\"", CsvUtils.escapeField(",", false));
-        assertEquals("\",,\"", CsvUtils.escapeField(",,", false));
-        assertEquals("\"a,comma\"", CsvUtils.escapeField("a,comma", false));
-        assertEquals("\",comma-at-begin\"", CsvUtils.escapeField(",comma-at-begin", false));
-        assertEquals("\"comma-at-end,\"", CsvUtils.escapeField("comma-at-end,", false));
-        assertEquals("\",,a,lot,,,of,commas,,\"",
-                CsvUtils.escapeField(",,a,lot,,,of,commas,,", false));
-        assertEquals("\"a comma,and a space\"", CsvUtils.escapeField("a comma,and a space", false));
+        assertEquals("\";\"", CsvUtils.escapeField(";", false));
+        assertEquals("\";;\"", CsvUtils.escapeField(";;", false));
+        assertEquals("\"a;comma\"", CsvUtils.escapeField("a;comma", false));
+        assertEquals("\";comma-at-begin\"", CsvUtils.escapeField(";comma-at-begin", false));
+        assertEquals("\"comma-at-end;\"", CsvUtils.escapeField("comma-at-end;", false));
+        assertEquals("\";;a;lot;;;of;commas;;\"",
+                CsvUtils.escapeField(";;a;lot;;;of;commas;;", false));
+        assertEquals("\"a comma;and a space\"", CsvUtils.escapeField("a comma;and a space", false));
         assertEquals("\"\"\"\"", CsvUtils.escapeField("\"", false)); // " -> """"
         assertEquals("\"\"\"\"\"\"", CsvUtils.escapeField("\"\"", false)); // "" -> """"""
         assertEquals("\"\"\"\"\"\"\"\"", CsvUtils.escapeField("\"\"\"", false)); // """ -> """"""""
@@ -310,8 +310,8 @@ public class CsvUtilsTests extends AndroidTestCase {
                 CsvUtils.escapeField("\"text\"", false)); // "text" -> """text"""
         assertEquals("\"text has \"\" in middle\"",
                 CsvUtils.escapeField("text has \" in middle", false));
-        assertEquals("\"\"\"quote,at begin\"", CsvUtils.escapeField("\"quote,at begin", false));
-        assertEquals("\"quote at,end\"\"\"", CsvUtils.escapeField("quote at,end\"", false));
+        assertEquals("\"\"\"quote;at begin\"", CsvUtils.escapeField("\"quote;at begin", false));
+        assertEquals("\"quote at;end\"\"\"", CsvUtils.escapeField("quote at;end\"", false));
         assertEquals("\"\"\"quote at begin\"", CsvUtils.escapeField("\"quote at begin", false));
         assertEquals("\"quote at end\"\"\"", CsvUtils.escapeField("quote at end\"", false));
     }
@@ -349,29 +349,29 @@ public class CsvUtilsTests extends AndroidTestCase {
     public void testJoinWithoutColumnPositions() {
         assertEquals("", CsvUtils.join());
         assertEquals("", CsvUtils.join(""));
-        assertEquals(",", CsvUtils.join("", ""));
+        assertEquals(";", CsvUtils.join("", ""));
 
-        assertEquals("text, text,text ",
+        assertEquals("text; text;text ",
                 CsvUtils.join("text", " text", "text "));
-        assertEquals("\"\"\"\",\"\"\"\"\"\",\"\"\"text\"\"\"",
+        assertEquals("\"\"\"\";\"\"\"\"\"\";\"\"\"text\"\"\"",
                 CsvUtils.join("\"", "\"\"", "\"text\""));
-        assertEquals("a b,\"c,d\",\"e\"\"f\"",
-                CsvUtils.join("a b", "c,d", "e\"f"));
+        assertEquals("a b;\"c;d\";\"e\"\"f\"",
+                CsvUtils.join("a b", "c;d", "e\"f"));
     }
 
     public void testJoinWithoutColumnPositionsWithExtraSpace() {
         final int extraSpace = CsvUtils.JOIN_FLAGS_EXTRA_SPACE;
         assertEquals("", CsvUtils.join(extraSpace));
         assertEquals("", CsvUtils.join(extraSpace, ""));
-        assertEquals(", ", CsvUtils.join(extraSpace, "", ""));
+        assertEquals("; ", CsvUtils.join(extraSpace, "", ""));
 
-        assertEquals("text,  text, text ",
+        assertEquals("text;  text; text ",
                 CsvUtils.join(extraSpace, "text", " text", "text "));
         // ","","text" -> """","""""","""text"""
-        assertEquals("\"\"\"\", \"\"\"\"\"\", \"\"\"text\"\"\"",
+        assertEquals("\"\"\"\"; \"\"\"\"\"\"; \"\"\"text\"\"\"",
                 CsvUtils.join(extraSpace, "\"", "\"\"", "\"text\""));
-        assertEquals("a b, \"c,d\", \"e\"\"f\"",
-                CsvUtils.join(extraSpace, "a b", "c,d", "e\"f"));
+        assertEquals("a b; \"c;d\"; \"e\"\"f\"",
+                CsvUtils.join(extraSpace, "a b", "c;d", "e\"f"));
     }
 
     public void testJoinWithoutColumnPositionsWithExtraSpaceAndAlwaysQuoted() {
@@ -379,14 +379,14 @@ public class CsvUtilsTests extends AndroidTestCase {
                 CsvUtils.JOIN_FLAGS_EXTRA_SPACE | CsvUtils.JOIN_FLAGS_ALWAYS_QUOTED;
         assertEquals("", CsvUtils.join(extrSpaceAndQuoted));
         assertEquals("\"\"", CsvUtils.join(extrSpaceAndQuoted, ""));
-        assertEquals("\"\", \"\"", CsvUtils.join(extrSpaceAndQuoted, "", ""));
+        assertEquals("\"\"; \"\"", CsvUtils.join(extrSpaceAndQuoted, "", ""));
 
-        assertEquals("\"text\", \" text\", \"text \"",
+        assertEquals("\"text\"; \" text\"; \"text \"",
                 CsvUtils.join(extrSpaceAndQuoted, "text", " text", "text "));
         // ","","text" -> """", """""", """text"""
-        assertEquals("\"\"\"\", \"\"\"\"\"\", \"\"\"text\"\"\"",
+        assertEquals("\"\"\"\"; \"\"\"\"\"\"; \"\"\"text\"\"\"",
                 CsvUtils.join(extrSpaceAndQuoted, "\"", "\"\"", "\"text\""));
-        assertEquals("\"a b\", \"c,d\", \"e\"\"f\"",
+        assertEquals("\"a b\"; \"c,d\"; \"e\"\"f\"",
                 CsvUtils.join(extrSpaceAndQuoted, "a b", "c,d", "e\"f"));
     }
 
@@ -394,31 +394,31 @@ public class CsvUtilsTests extends AndroidTestCase {
         final int noFlags = CsvUtils.JOIN_FLAGS_NONE;
         assertEquals("", CsvUtils.join(noFlags, new int[]{}));
         assertEquals("   ", CsvUtils.join(noFlags, new int[]{3}, ""));
-        assertEquals(" ,", CsvUtils.join(noFlags, new int[]{1}, "", ""));
-        assertEquals(",  ", CsvUtils.join(noFlags, new int[]{0, 3}, "", ""));
+        assertEquals(" ;", CsvUtils.join(noFlags, new int[]{1}, "", ""));
+        assertEquals(";  ", CsvUtils.join(noFlags, new int[]{0, 3}, "", ""));
 
-        assertEquals("text,    text, text ",
+        assertEquals("text;    text; text ",
                 CsvUtils.join(noFlags, new int[]{0, 8, 15}, "text", " text", "text "));
         // ","","text" -> """",   """""","""text"""
-        assertEquals("\"\"\"\",   \"\"\"\"\"\",\"\"\"text\"\"\"",
+        assertEquals("\"\"\"\";   \"\"\"\"\"\";\"\"\"text\"\"\"",
                 CsvUtils.join(noFlags, new int[]{0, 8, 15}, "\"", "\"\"", "\"text\""));
-        assertEquals("a b,    \"c,d\", \"e\"\"f\"",
-                CsvUtils.join(noFlags, new int[]{0, 8, 15}, "a b", "c,d", "e\"f"));
+        assertEquals("a b;    \"c;d\"; \"e\"\"f\"",
+                CsvUtils.join(noFlags, new int[]{0, 8, 15}, "a b", "c;d", "e\"f"));
     }
 
     public void testJoinWithColumnPositionsWithExtraSpace() {
         final int extraSpace = CsvUtils.JOIN_FLAGS_EXTRA_SPACE;
         assertEquals("", CsvUtils.join(extraSpace, new int[]{}));
         assertEquals("   ", CsvUtils.join(extraSpace, new int[]{3}, ""));
-        assertEquals(" , ", CsvUtils.join(extraSpace, new int[]{1}, "", ""));
-        assertEquals(",  ", CsvUtils.join(extraSpace, new int[]{0, 3}, "", ""));
+        assertEquals(" ; ", CsvUtils.join(extraSpace, new int[]{1}, "", ""));
+        assertEquals(";  ", CsvUtils.join(extraSpace, new int[]{0, 3}, "", ""));
 
-        assertEquals("text,    text, text ",
+        assertEquals("text;    text; text ",
                 CsvUtils.join(extraSpace, new int[]{0, 8, 15}, "text", " text", "text "));
         // ","","text" -> """",   """""", """text"""
-        assertEquals("\"\"\"\",   \"\"\"\"\"\", \"\"\"text\"\"\"",
+        assertEquals("\"\"\"\";   \"\"\"\"\"\"; \"\"\"text\"\"\"",
                 CsvUtils.join(extraSpace, new int[]{0, 8, 15}, "\"", "\"\"", "\"text\""));
-        assertEquals("a b,    \"c,d\", \"e\"\"f\"",
-                CsvUtils.join(extraSpace, new int[]{0, 8, 15}, "a b", "c,d", "e\"f"));
+        assertEquals("a b;    \"c;d\"; \"e\"\"f\"",
+                CsvUtils.join(extraSpace, new int[]{0, 8, 15}, "a b", "c;d", "e\"f"));
     }
 }

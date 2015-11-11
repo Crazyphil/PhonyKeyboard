@@ -57,7 +57,7 @@ public final class CsvUtils {
 
     // Note that none of these characters match high or low surrogate characters, so we need not
     // take care of matching by code point.
-    private static final char COMMA = ',';
+    private static final char COMMA = ';';
     private static final char SPACE = ' ';
     private static final char QUOTE = '"';
 
