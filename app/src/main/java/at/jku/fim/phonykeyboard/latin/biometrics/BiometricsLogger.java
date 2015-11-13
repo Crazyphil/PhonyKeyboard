@@ -28,7 +28,7 @@ public class BiometricsLogger extends BiometricsManager implements SensorEventLi
     private Writer logStream;
 
     public void onShowWindow() {
-        openOrCreateLog(context);
+        openOrCreateLog();
     }
 
     public void onHideWindow() {
@@ -44,27 +44,24 @@ public class BiometricsLogger extends BiometricsManager implements SensorEventLi
     }
 
     public void onKeyDown(final Key key, final MotionEvent event) {
-        onKeyEvent(EVENT_DOWN, key, event);
+        writeLogEntry(buildEntry(key, event));
     }
 
     public void onKeyUp(final Key key, final MotionEvent event) {
-        onKeyEvent(EVENT_UP, key, event);
+        writeLogEntry(buildEntry(key, event));
     }
 
-    private void onKeyEvent(int eventType, Key key, MotionEvent event) {
-        BiometricsEntry entry = new BiometricsEntry(getSensors().size());
-        entry.setProperties(eventType, key, event, getScreenOrientation());
-
-        Enumeration<Sensor> sensorEnum = getSensors().keys();
-        while (sensorEnum.hasMoreElements()) {
-            Sensor sensor = sensorEnum.nextElement();
-            entry.addSensorData(getSensors().get(sensor));
-        }
-
-        writeLogEntry(entry);
+    @Override
+    public double getConfidence() {
+        return CONFIDENCE_NOT_ENOUGH_DATA;
     }
 
-    private void openOrCreateLog(Context context) {
+    @Override
+    public boolean clearData() {
+        return true;
+    }
+
+    private void openOrCreateLog() {
         if (logStream != null) {
             return;
         }
@@ -73,10 +70,10 @@ public class BiometricsLogger extends BiometricsManager implements SensorEventLi
         boolean isExternal = Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED);
         if (isExternal) {
             Log.d(TAG, "Using external storage for biometrics log");
-            privateFiles = context.getExternalFilesDir(null).list();
+            privateFiles = getContext().getExternalFilesDir(null).list();
         } else {
             Log.d(TAG, "Using internal storage for biometrics log");
-            privateFiles = context.fileList();
+            privateFiles = getContext().fileList();
         }
 
         boolean exists = false;
@@ -89,9 +86,9 @@ public class BiometricsLogger extends BiometricsManager implements SensorEventLi
 
         try {
             if (isExternal) {
-                logStream = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(context.getExternalFilesDir(null), LOG_FILE), true)));
+                logStream = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(getContext().getExternalFilesDir(null), LOG_FILE), true)));
             } else {
-                logStream = new BufferedWriter(new OutputStreamWriter(context.openFileOutput(LOG_FILE, Context.MODE_APPEND)));
+                logStream = new BufferedWriter(new OutputStreamWriter(getContext().openFileOutput(LOG_FILE, Context.MODE_APPEND)));
             }
         }
         catch (FileNotFoundException e) {

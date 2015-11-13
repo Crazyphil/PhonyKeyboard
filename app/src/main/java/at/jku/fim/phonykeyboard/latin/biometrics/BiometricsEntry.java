@@ -11,6 +11,8 @@ import at.jku.fim.phonykeyboard.keyboard.Key;
 import at.jku.fim.phonykeyboard.keyboard.KeyDetector;
 
 public class BiometricsEntry {
+    public static final int EVENT_DOWN = 0, EVENT_UP = 1;
+
     private int pointerId;
     private long timestamp;
     private int screenOrientation;
@@ -128,9 +130,9 @@ public class BiometricsEntry {
 
     public String eventToString() {
         switch (event) {
-            case BiometricsManager.EVENT_DOWN:
+            case EVENT_DOWN:
                 return "KeyDown";
-            case BiometricsManager.EVENT_UP:
+            case EVENT_UP:
                 return "KeyUp";
             default:
                 return null;

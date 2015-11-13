@@ -847,6 +847,11 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
         }
 
         LatinImeLogger.onStartInputView(editorInfo);
+
+        if (!restarting) {
+            BiometricsManager.getInstance().onStartInputView(editorInfo);
+        }
+
         // In landscape mode, this method gets called without the input view being created.
         if (mainKeyboardView == null) {
             return;

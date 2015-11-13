@@ -1,5 +1,6 @@
 package at.jku.fim.phonykeyboard.latin.biometrics;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -9,6 +10,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.WindowManager;
@@ -19,22 +21,25 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 
 import at.jku.fim.phonykeyboard.keyboard.Key;
+import at.jku.fim.phonykeyboard.latin.PhonyKeyboard;
 
 public abstract class BiometricsManager implements SensorEventListener {
     private static final String TAG = "BiometricsManager";
     private static final String BROADCAST_ACTION_GET_CONFIDENCE = "at.jku.fim.phonykeyboard.BIOMETRICS_GET_CONFIDENCE";
+    private static final String BROADCAST_EXTRA_CONFIDENCE = "at.jku.fim.phonykeyboard.BIOMETRICS_CONFIDENCE";
     private static final String BROADCAST_ACTION_CLEAR_DATA = "at.jku.fim.phonykeyboard.BIOMETRICS_CLEAR_DATA";
-    public static final int EVENT_DOWN = 0, EVENT_UP = 1;
+
+    public static final double CONFIDENCE_NOT_ENOUGH_DATA = -1, CONFIDENCE_CAPTURING_ERROR = -2;
 
     private static BiometricsManager instance;
 
+    private PhonyKeyboard keyboard;
     private SensorManager sensorManager;
     private final int[] sensorTypes;
     private Dictionary<Sensor, float[]> sensors = new Hashtable<>();
     private BiometricsReceiver receiver;
 
     protected static final float[] EMPTY_SENSOR_DATA = new float[0];
-    protected Context context;
 
     public BiometricsManager() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
@@ -45,11 +50,11 @@ public abstract class BiometricsManager implements SensorEventListener {
         }
     }
 
-    public void init(Context context) {
-        this.context = context;
+    public void init(PhonyKeyboard keyboard) {
+        this.keyboard = keyboard;
         instance = this;
 
-        sensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
+        sensorManager = (SensorManager)keyboard.getSystemService(Context.SENSOR_SERVICE);
         for (int sensorType : sensorTypes){
             if (sensorManager.getDefaultSensor(sensorType) != null) {
                 sensors.put(sensorManager.getDefaultSensor(sensorType), EMPTY_SENSOR_DATA);
@@ -77,7 +82,7 @@ public abstract class BiometricsManager implements SensorEventListener {
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
 
-    public void onStartInput(EditorInfo editorInfo) {
+    public void onStartInputView(EditorInfo editorInfo) {
     }
 
     public void onCreate() {
@@ -89,13 +94,15 @@ public abstract class BiometricsManager implements SensorEventListener {
 
         receiver = new BiometricsReceiver();
         IntentFilter filter = new IntentFilter(BROADCAST_ACTION_GET_CONFIDENCE);
-        context.registerReceiver(receiver, filter);
+        filter.addAction(BROADCAST_ACTION_CLEAR_DATA);
+        filter.setPriority(1);
+        keyboard.registerReceiver(receiver, filter);
     }
 
     public void onDestroy() {
         sensorManager.unregisterListener(this);
 
-        context.unregisterReceiver(receiver);
+        keyboard.unregisterReceiver(receiver);
         receiver = null;
     }
 
@@ -105,57 +112,81 @@ public abstract class BiometricsManager implements SensorEventListener {
     public abstract void onKeyDown(final Key key, final MotionEvent event);
     public abstract void onKeyUp(final Key key, final MotionEvent event);
 
+    public abstract double getConfidence();
+    public abstract boolean clearData();
+
     public String getSensorType(Sensor sensor) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-            return sensor.getStringType();
+            return sensor.getStringType().substring(sensor.getStringType().lastIndexOf('.') + 1);
         }
         else {
             switch (sensor.getType()) {
                 case Sensor.TYPE_ACCELEROMETER:
-                    return "Accelerometer";
+                    return "accelerometer";
                 case Sensor.TYPE_AMBIENT_TEMPERATURE:
-                    return "AmbientTemperature";
+                    return "ambient_temperature";
                 case Sensor.TYPE_GAME_ROTATION_VECTOR:
-                    return "GameRotationVector";
+                    return "game_rotation_vector";
                 case Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR:
-                    return "GeomagneticRotationVector";
+                    return "geomagnetic_rotation_vector";
                 case Sensor.TYPE_GRAVITY:
-                    return "Gravity";
+                    return "gravity";
                 case Sensor.TYPE_GYROSCOPE:
-                    return "Gyroscope";
+                    return "gyroscope";
                 case Sensor.TYPE_HEART_RATE:
-                    return "Heartrate";
+                    return "heart_rate";
                 case Sensor.TYPE_LIGHT:
-                    return "Light";
+                    return "light";
                 case Sensor.TYPE_LINEAR_ACCELERATION:
-                    return "LinearAcceleration";
+                    return "linear_acceleration";
                 case Sensor.TYPE_MAGNETIC_FIELD:
-                    return "MagneticField";
+                    return "magnetic_field";
                 case Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED:
-                    return "MagneticFieldUncalibrated";
+                    return "magnetic_field_uncalibrated";
                 case Sensor.TYPE_PRESSURE:
-                    return "Pressure";
+                    return "pressure";
                 case Sensor.TYPE_PROXIMITY:
-                    return "Proximity";
+                    return "proximity";
                 case Sensor.TYPE_RELATIVE_HUMIDITY:
-                    return "RelativeHumidity";
+                    return "relative_humidity";
                 case Sensor.TYPE_ROTATION_VECTOR:
-                    return "RotationVector";
+                    return "rotation_vector";
                 case Sensor.TYPE_SIGNIFICANT_MOTION:
-                    return "SignificantMotion";
+                    return "significant_motion";
                 case Sensor.TYPE_STEP_COUNTER:
-                    return "StepCounter";
+                    return "step_counter";
                 case Sensor.TYPE_STEP_DETECTOR:
-                    return "StepDetector";
+                    return "step_detector";
             }
             Log.w(TAG, "Couldn't resolve sensor to type: " + sensor.toString());
             return null;
         }
     }
 
-    protected int getScreenOrientation() {
-        WindowManager wm = (WindowManager)context.getSystemService(Context.WINDOW_SERVICE);
+    public int getScreenOrientation() {
+        WindowManager wm = (WindowManager)keyboard.getSystemService(Context.WINDOW_SERVICE);
         return wm.getDefaultDisplay().getRotation();
+    }
+
+    protected Context getContext() {
+        return keyboard;
+    }
+
+    protected BiometricsEntry buildEntry(Key key, MotionEvent event) {
+        int eventType = BiometricsEntry.EVENT_DOWN;
+        if ((event.getAction() & (MotionEvent.ACTION_POINTER_UP | MotionEvent.ACTION_UP)) > 0) {
+            eventType = BiometricsEntry.EVENT_UP;
+        }
+
+        BiometricsEntry entry = new BiometricsEntry(getSensors().size());
+        entry.setProperties(eventType, key, event, getScreenOrientation());
+
+        Enumeration<Sensor> sensorEnum = getSensors().keys();
+        while (sensorEnum.hasMoreElements()) {
+            Sensor sensor = sensorEnum.nextElement();
+            entry.addSensorData(getSensors().get(sensor));
+        }
+        return entry;
     }
 
     private class BiometricsReceiver extends BroadcastReceiver {
@@ -172,11 +203,19 @@ public abstract class BiometricsManager implements SensorEventListener {
         }
 
         public void getConfidence(Intent intent) {
+            if (!isOrderedBroadcast()) return;
 
+            double confidence = BiometricsManager.this.getConfidence();
+            Bundle result = new Bundle(1);
+            result.putDouble(BROADCAST_EXTRA_CONFIDENCE, confidence);
+
+            setResultCode(confidence == CONFIDENCE_NOT_ENOUGH_DATA ? Activity.RESULT_CANCELED : Activity.RESULT_OK);
+            setResultExtras(result);
         }
 
         public void clearData(Intent intent) {
-
+            boolean result = BiometricsManager.this.clearData();
+            setResultCode(result ? Activity.RESULT_OK : Activity.RESULT_CANCELED);
         }
     }
 }
