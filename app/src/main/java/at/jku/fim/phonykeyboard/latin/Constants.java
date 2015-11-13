@@ -57,6 +57,8 @@ public final class Constants {
         @SuppressWarnings("dep-ann")
         public static final String FORCE_ASCII = "forceAscii";
 
+        public static final String BIOMETRICS_CONTEXT = "at.jku.fim.phonykeyboard.biometricsContext";
+
         private ImeOption() {
             // This utility class is not publicly instantiable.
         }

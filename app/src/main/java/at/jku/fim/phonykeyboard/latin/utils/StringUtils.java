@@ -71,6 +71,7 @@ public final class StringUtils {
      * a comma character in it.
      */
     private static final String SEPARATOR_FOR_COMMA_SPLITTABLE_TEXT = ",";
+    private static final String SEPARATOR_FOR_KEY_VALUE_TEXT = "=";
 
     public static boolean containsInCommaSplittableText(final String text,
             final String extraValues) {
@@ -78,6 +79,39 @@ public final class StringUtils {
             return false;
         }
         return containsInArray(text, extraValues.split(SEPARATOR_FOR_COMMA_SPLITTABLE_TEXT));
+    }
+
+    public static boolean containsInCommaSplittableKeyValueText(final String text,
+             final String extraValues) {
+        if (TextUtils.isEmpty(extraValues)) {
+            return false;
+        }
+
+        String[] parts = extraValues.split(SEPARATOR_FOR_COMMA_SPLITTABLE_TEXT);
+        for (int i = 0; i < parts.length; i++) {
+            int valuePos = parts[i].indexOf(SEPARATOR_FOR_KEY_VALUE_TEXT);
+            if (valuePos >= 0) {
+                parts[i] = parts[i].substring(0, valuePos);
+            }
+        }
+        return containsInArray(text, parts);
+    }
+
+    public static String valueOfCommaSplittableKeyValueText(final String text,
+             final String extraValues) {
+        if (TextUtils.isEmpty(extraValues)) {
+            return null;
+        }
+
+        String[] parts = extraValues.split(SEPARATOR_FOR_COMMA_SPLITTABLE_TEXT);
+        String value = null;
+        for (int i = 0; i < parts.length; i++) {
+            int valuePos = parts[i].indexOf(SEPARATOR_FOR_KEY_VALUE_TEXT);
+            if (valuePos >= 0) {
+                value = parts[i].substring(valuePos + 1);
+            }
+        }
+        return value;
     }
 
     public static String appendToCommaSplittableTextIfNotExists(final String text,
