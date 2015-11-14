@@ -33,15 +33,17 @@ public class BiometricsManagerImpl extends BiometricsManager {
 
     @Override
     public void onStartInputView(EditorInfo editorInfo, boolean restarting) {
-        String context = StringUtils.valueOfCommaSplittableKeyValueText(Constants.ImeOption.BIOMETRICS_CONTEXT, editorInfo.privateImeOptions);
-        if (context == null || context.isEmpty()) {
-            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP_MR1) {
-                context = getContext().getPackageManager().getNameForUid(((PhonyKeyboard)getContext()).getCurrentInputBinding().getUid());
-            } else {
-                context = editorInfo.packageName;    // Package name is system verified since Android M
+        if (!restarting) {
+            String context = StringUtils.valueOfCommaSplittableKeyValueText(Constants.ImeOption.BIOMETRICS_CONTEXT, editorInfo.privateImeOptions);
+            if (context == null || context.isEmpty()) {
+                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                    context = getContext().getPackageManager().getNameForUid(((PhonyKeyboard) getContext()).getCurrentInputBinding().getUid());
+                } else {
+                    context = editorInfo.packageName;    // Package name is system verified since Android M
+                }
             }
+            currentBiometricsContext = getBiometricsContext(context);
         }
-        currentBiometricsContext = getBiometricsContext(context);
         classifier.onStartInput(currentBiometricsContext, restarting);
     }
 
