@@ -41,7 +41,7 @@ public abstract class BiometricsManager implements SensorEventListener {
 
     protected static final float[] EMPTY_SENSOR_DATA = new float[0];
 
-    public BiometricsManager() {
+    protected BiometricsManager() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
             sensorTypes = new int[] { Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_GRAVITY, Sensor.TYPE_GYROSCOPE, Sensor.TYPE_GYROSCOPE_UNCALIBRATED, Sensor.TYPE_LINEAR_ACCELERATION, Sensor.TYPE_ROTATION_VECTOR };
         }
@@ -82,9 +82,6 @@ public abstract class BiometricsManager implements SensorEventListener {
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
 
-    public void onStartInputView(EditorInfo editorInfo) {
-    }
-
     public void onCreate() {
         Enumeration<Sensor> sensorEnum = sensors.keys();
         while (sensorEnum.hasMoreElements()) {
@@ -106,8 +103,8 @@ public abstract class BiometricsManager implements SensorEventListener {
         receiver = null;
     }
 
-    public abstract void onShowWindow();
-    public abstract void onHideWindow();
+    public abstract void onStartInputView(EditorInfo editorInfo, boolean restarting);
+    public abstract void onFinishInputView(boolean finishInput);
 
     public abstract void onKeyDown(final Key key, final MotionEvent event);
     public abstract void onKeyUp(final Key key, final MotionEvent event);
@@ -168,8 +165,8 @@ public abstract class BiometricsManager implements SensorEventListener {
         return wm.getDefaultDisplay().getRotation();
     }
 
-    protected Context getContext() {
-        return keyboard;
+    public CharSequence getInputText() {
+        return keyboard.getText();
     }
 
     protected BiometricsEntry buildEntry(Key key, MotionEvent event) {
@@ -187,6 +184,10 @@ public abstract class BiometricsManager implements SensorEventListener {
             entry.addSensorData(getSensors().get(sensor));
         }
         return entry;
+    }
+
+    protected Context getContext() {
+        return keyboard;
     }
 
     private class BiometricsReceiver extends BroadcastReceiver {

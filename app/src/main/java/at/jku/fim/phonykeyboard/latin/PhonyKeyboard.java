@@ -848,9 +848,7 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
 
         LatinImeLogger.onStartInputView(editorInfo);
 
-        if (!restarting) {
-            BiometricsManager.getInstance().onStartInputView(editorInfo);
-        }
+        BiometricsManager.getInstance().onStartInputView(editorInfo, restarting);
 
         // In landscape mode, this method gets called without the input view being created.
         if (mainKeyboardView == null) {
@@ -1058,6 +1056,9 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
         // Should do the following in onFinishInputInternal but until JB MR2 it's not called :(
         if (mWordComposer.isComposingWord()) mConnection.finishComposingText();
         resetComposingState(true /* alsoResetLastComposedWord */);
+
+        BiometricsManager.getInstance().onFinishInputView(finishingInput);
+
         // Notify ResearchLogger
         if (ProductionFlag.USES_DEVELOPMENT_ONLY_DIAGNOSTICS) {
             ResearchLogger.latinIME_onFinishInputViewInternal(finishingInput, mLastSelectionStart,
@@ -1205,7 +1206,6 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
     public void hideWindow() {
         LatinImeLogger.commit();
         mKeyboardSwitcher.onHideWindow();
-        BiometricsManager.getInstance().onHideWindow();
 
         if (AccessibilityUtils.getInstance().isAccessibilityEnabled()) {
             AccessibleKeyboardViewProxy.getInstance().onHideWindow();
@@ -1217,12 +1217,6 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
             mOptionsDialog = null;
         }
         super.hideWindow();
-    }
-
-    @Override
-    public void showWindow(boolean showInput) {
-        BiometricsManager.getInstance().onShowWindow();
-        super.showWindow(showInput);
     }
 
     @Override
@@ -1410,6 +1404,10 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
             commitChosenWord(typedWord, LastComposedWord.COMMIT_TYPE_USER_TYPED_WORD,
                     separatorString);
         }
+    }
+
+    public CharSequence getText() {
+        return mConnection.getText();
     }
 
     // Called from the KeyboardSwitcher which needs to know auto caps state to display

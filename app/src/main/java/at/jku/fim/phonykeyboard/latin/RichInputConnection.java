@@ -229,6 +229,11 @@ public final class RichInputConnection {
         return mIC.getSelectedText(flags);
     }
 
+    public CharSequence getText() {
+        if (null == mIC) return null;
+        return mIC.getExtractedText(new ExtractedTextRequest(), 0).text;
+    }
+
     public boolean canDeleteCharacters() {
         return mExpectedCursorPosition > 0;
     }

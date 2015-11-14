@@ -32,7 +32,7 @@ public class BiometricsManagerImpl extends BiometricsManager {
     }
 
     @Override
-    public void onStartInputView(EditorInfo editorInfo) {
+    public void onStartInputView(EditorInfo editorInfo, boolean restarting) {
         String context = StringUtils.valueOfCommaSplittableKeyValueText(Constants.ImeOption.BIOMETRICS_CONTEXT, editorInfo.privateImeOptions);
         if (context == null || context.isEmpty()) {
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP_MR1) {
@@ -42,7 +42,12 @@ public class BiometricsManagerImpl extends BiometricsManager {
             }
         }
         currentBiometricsContext = getBiometricsContext(context);
-        classifier.onStartInput(currentBiometricsContext);
+        classifier.onStartInput(currentBiometricsContext, restarting);
+    }
+
+    @Override
+    public void onFinishInputView(boolean finishInput) {
+        classifier.onFinishInput(finishInput);
     }
 
     @Override
@@ -58,21 +63,13 @@ public class BiometricsManagerImpl extends BiometricsManager {
     }
 
     @Override
-    public void onShowWindow() {
-    }
-
-    @Override
-    public void onHideWindow() {
-    }
-
-    @Override
     public void onKeyDown(Key key, MotionEvent event) {
-
+        classifier.onKeyEvent(buildEntry(key, event));
     }
 
     @Override
     public void onKeyUp(Key key, MotionEvent event) {
-
+        classifier.onKeyEvent(buildEntry(key, event));
     }
 
     @Override
@@ -82,7 +79,7 @@ public class BiometricsManagerImpl extends BiometricsManager {
 
     @Override
     public boolean clearData() {
-        return false;
+        return classifier.clearData();
     }
 
     public SQLiteDatabase getDb() {

@@ -6,6 +6,7 @@ import android.hardware.SensorEventListener;
 import android.os.Environment;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.inputmethod.EditorInfo;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -27,11 +28,14 @@ public class BiometricsLogger extends BiometricsManager implements SensorEventLi
 
     private Writer logStream;
 
-    public void onShowWindow() {
-        openOrCreateLog();
+    @Override
+    public void onStartInputView(EditorInfo editorInfo, boolean restarting) {
+        if (!restarting) {
+            openOrCreateLog();
+        }
     }
 
-    public void onHideWindow() {
+    public void onFinishInputView(boolean finishInput) {
         try {
             if (logStream != null) {
                 logStream.close();

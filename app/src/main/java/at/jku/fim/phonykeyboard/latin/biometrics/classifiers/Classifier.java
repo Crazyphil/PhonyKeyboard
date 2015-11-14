@@ -20,8 +20,13 @@ public abstract class Classifier {
         return BiometricsManager.CONFIDENCE_NOT_ENOUGH_DATA;
     }
 
+    public boolean clearData() {
+        return false;
+    }
+
     public abstract void onCreate();
-    public abstract void onStartInput(long context);
+    public abstract void onStartInput(long context, boolean restarting);
     public abstract void onKeyEvent(BiometricsEntry entry);
+    public abstract void onFinishInput(boolean done);
     public abstract void onDestroy();
 }
