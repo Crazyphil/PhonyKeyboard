@@ -695,5 +695,15 @@ Tip: You can download and remove dictionaries by going to &lt;b>Language &amp; i
     <string name="study_action_settings">Settings</string>
     <string name="study_yourpassword_title">Your password is:</string>
     <string name="study_yourpassword_action">Please enter your password below to login.</string>
-    <string name="study_yourpassword_progress">Generating your password...</string>
+    <string name="study_yourpassword_progress">Generating your password…</string>
+    <string name="study_yourpassword_verify">Verifying your identity…</string>
+    <string name="study_passwordresult_wrong_title">Wrong</string>
+    <string name="study_passwordresult_wrong_text">Please try again.</string>
+    <string name="study_passwordresult_correct_title">Correct</string>
+    <string name="study_passwordresult_correct_text">Now you would be logged in.</string>
+    <string name="study_passwordresult_correct_nobiometrics">No biometric verification was used.</string>
+    <string name="study_passwordresult_correct_nodata">Your biometric profile is not complete yet.</string>
+    <string name="study_passwordresult_correct_failed">Because of your typing style, no biometric profile was created.</string>
+    <string name="study_passwordresult_correct_user">We\'re %.2d %% certain it\'s you.</string>
+    <string name="study_passwordresult_correct_impostor">There\'s a %.2d %% chance you\'re an impostor.</string>
 </resources>

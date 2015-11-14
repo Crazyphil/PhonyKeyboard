@@ -25,10 +25,10 @@ import at.jku.fim.phonykeyboard.latin.PhonyKeyboard;
 
 public abstract class BiometricsManager implements SensorEventListener {
     private static final String TAG = "BiometricsManager";
-    private static final String BROADCAST_ACTION_GET_CONFIDENCE = "at.jku.fim.phonykeyboard.BIOMETRICS_GET_CONFIDENCE";
-    private static final String BROADCAST_EXTRA_CONFIDENCE = "at.jku.fim.phonykeyboard.BIOMETRICS_CONFIDENCE";
-    private static final String BROADCAST_ACTION_CLEAR_DATA = "at.jku.fim.phonykeyboard.BIOMETRICS_CLEAR_DATA";
 
+    public static final String BROADCAST_ACTION_GET_CONFIDENCE = "at.jku.fim.phonykeyboard.BIOMETRICS_GET_CONFIDENCE";
+    public static final String BROADCAST_EXTRA_CONFIDENCE = "at.jku.fim.phonykeyboard.BIOMETRICS_CONFIDENCE";
+    public static final String BROADCAST_ACTION_CLEAR_DATA = "at.jku.fim.phonykeyboard.BIOMETRICS_CLEAR_DATA";
     public static final double CONFIDENCE_NOT_ENOUGH_DATA = -1, CONFIDENCE_CAPTURING_ERROR = -2;
 
     private static BiometricsManager instance;
@@ -210,7 +210,7 @@ public abstract class BiometricsManager implements SensorEventListener {
             Bundle result = new Bundle(1);
             result.putDouble(BROADCAST_EXTRA_CONFIDENCE, confidence);
 
-            setResultCode(confidence == CONFIDENCE_NOT_ENOUGH_DATA ? Activity.RESULT_CANCELED : Activity.RESULT_OK);
+            setResultCode((confidence == CONFIDENCE_NOT_ENOUGH_DATA || confidence == CONFIDENCE_CAPTURING_ERROR) ? Activity.RESULT_CANCELED : Activity.RESULT_OK);
             setResultExtras(result);
         }
 
