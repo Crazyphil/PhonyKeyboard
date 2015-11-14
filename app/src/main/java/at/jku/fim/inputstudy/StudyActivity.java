@@ -19,6 +19,7 @@ public class StudyActivity extends AppCompatActivity {
     private static final int PASSWORD_WORD_LENGTH = 4;
 
     private String password;
+    private PasswordGenerator passwordGenerator;
 
     private ProgressDialog progressDialog;
     private TextView passwordTextView;
@@ -31,6 +32,7 @@ public class StudyActivity extends AppCompatActivity {
         if (savedInstanceState != null) {
             password = savedInstanceState.getString("password");
         }
+        passwordGenerator = new PasswordGenerator(this);
 
         setContentView(R.layout.study_layout);
 
@@ -94,6 +96,12 @@ public class StudyActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onDestroy() {
+        passwordGenerator.destroy();
+        super.onDestroy();
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
@@ -111,8 +119,7 @@ public class StudyActivity extends AppCompatActivity {
     private class GeneratePasswordTask extends AsyncTask<Void, Void, String> {
         @Override
         protected String doInBackground(Void... params) {
-            PasswordGenerator generator = new PasswordGenerator(StudyActivity.this);
-            return generator.getWordBetweenDigits(PASSWORD_WORD_LENGTH, PASSWORD_WORD_LENGTH);
+            return passwordGenerator.getWordBetweenDigits(PASSWORD_WORD_LENGTH, PASSWORD_WORD_LENGTH);
         }
 
         @Override

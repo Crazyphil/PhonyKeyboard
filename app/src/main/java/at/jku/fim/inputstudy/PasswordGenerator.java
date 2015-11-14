@@ -41,6 +41,11 @@ public class PasswordGenerator {
         return firstDigit + c.getString(c.getColumnIndex(WordsContract.Words.COLUMN_NAME_WORD)).toLowerCase() + lastDigit;
     }
 
+    public void destroy() {
+        db.close();
+        db = null;
+    }
+
     private void ensureDatabase() {
         if (db == null) {
             File dbFile = new File(context.getFilesDir(), DB_FILENAME);
@@ -75,5 +80,4 @@ public class PasswordGenerator {
             db = SQLiteDatabase.openOrCreateDatabase(dbFile, null);
         }
     }
-
 }
