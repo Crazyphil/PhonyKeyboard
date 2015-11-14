@@ -598,11 +598,6 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
         mListener.onCancelInput();
     }
 
-    private void callBioLoggerOnKeyDown(final Key key, final MotionEvent event) {
-
-
-    }
-
     private void setKeyDetectorInner(final KeyDetector keyDetector) {
         final Keyboard keyboard = keyDetector.getKeyboard();
         if (keyDetector == mKeyDetector && keyboard == mKeyboard) {
