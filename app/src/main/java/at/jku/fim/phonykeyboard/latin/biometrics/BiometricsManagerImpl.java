@@ -61,6 +61,7 @@ public class BiometricsManagerImpl extends BiometricsManager {
     @Override
     public void onDestroy() {
         classifier.onDestroy();
+        db.close();
         super.onDestroy();
     }
 

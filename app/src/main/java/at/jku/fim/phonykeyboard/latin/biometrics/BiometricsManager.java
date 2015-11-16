@@ -195,15 +195,15 @@ public abstract class BiometricsManager implements SensorEventListener {
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
                 case BROADCAST_ACTION_GET_CONFIDENCE:
-                    getConfidence(intent);
+                    getConfidence();
                     break;
                 case BROADCAST_ACTION_CLEAR_DATA:
-                    clearData(intent);
+                    clearData();
                     break;
             }
         }
 
-        public void getConfidence(Intent intent) {
+        public void getConfidence() {
             if (!isOrderedBroadcast()) return;
 
             double confidence = BiometricsManager.this.getConfidence();
@@ -214,7 +214,7 @@ public abstract class BiometricsManager implements SensorEventListener {
             setResultExtras(result);
         }
 
-        public void clearData(Intent intent) {
+        public void clearData() {
             boolean result = BiometricsManager.this.clearData();
             setResultCode(result ? Activity.RESULT_OK : Activity.RESULT_CANCELED);
         }
