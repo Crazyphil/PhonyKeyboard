@@ -77,6 +77,7 @@ import at.jku.fim.phonykeyboard.latin.Suggest.OnGetSuggestedWordsCallback;
 import at.jku.fim.phonykeyboard.latin.SuggestedWords.SuggestedWordInfo;
 import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsLogger;
 import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManager;
+import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManagerImpl;
 import at.jku.fim.phonykeyboard.latin.define.ProductionFlag;
 import at.jku.fim.phonykeyboard.latin.personalization.DictionaryDecayBroadcastReciever;
 import at.jku.fim.phonykeyboard.latin.personalization.PersonalizationDictionary;
@@ -544,7 +545,8 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
         loadSettings();
         initSuggest();
 
-        new BiometricsLogger().init(this);
+        //new BiometricsLogger().init(this);
+        new BiometricsManagerImpl().init(this);
         BiometricsManager.getInstance().onCreate();
         if (ProductionFlag.USES_DEVELOPMENT_ONLY_DIAGNOSTICS) {
             ResearchLogger.getInstance().init(this, mKeyboardSwitcher, mSuggest);
