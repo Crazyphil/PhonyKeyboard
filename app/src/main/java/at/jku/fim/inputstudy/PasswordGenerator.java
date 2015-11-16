@@ -42,8 +42,10 @@ public class PasswordGenerator {
     }
 
     public void destroy() {
-        db.close();
-        db = null;
+        if (db != null) {
+            db.close();
+            db = null;
+        }
     }
 
     private void ensureDatabase() {

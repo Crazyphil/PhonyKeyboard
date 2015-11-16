@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -24,6 +25,7 @@ import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManager;
 public class StudyActivity extends AppCompatActivity {
     private static final int PASSWORD_WORD_LENGTH = 4;
 
+    private SharedPreferences preferences;
     private String password;
     private PasswordGenerator passwordGenerator;
 
@@ -38,6 +40,7 @@ public class StudyActivity extends AppCompatActivity {
         if (savedInstanceState != null) {
             password = savedInstanceState.getString("password");
         }
+        preferences = getSharedPreferences("StudyActivity", 0);
         passwordGenerator = new PasswordGenerator(this);
 
         setContentView(R.layout.study_layout);
@@ -73,6 +76,9 @@ public class StudyActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
+        if (preferences.contains("password")) {
+            password = preferences.getString("password", null);
+        }
     }
 
     @Override
@@ -92,6 +98,12 @@ public class StudyActivity extends AppCompatActivity {
         savedInstanceState.putString("password", password);
 
         super.onSaveInstanceState(savedInstanceState);
+    }
+
+    @Override
+    protected void onStop() {
+        preferences.edit().putString("password", password).apply();
+        super.onStop();
     }
 
     @Override
@@ -133,10 +145,11 @@ public class StudyActivity extends AppCompatActivity {
                     message.append("\n");
                     switch (getResultCode()) {
                         case RESULT_OK:
-                            if (getResultExtras(false).getDouble(BiometricsManager.BROADCAST_EXTRA_CONFIDENCE) > 0.5) {
-                                message.append(getResources().getString(R.string.study_passwordresult_correct_user));
+                            double confidence = getResultExtras(true).getDouble(BiometricsManager.BROADCAST_EXTRA_CONFIDENCE);
+                            if (confidence < 1) {
+                                message.append(getResources().getString(R.string.study_passwordresult_correct_user, confidence));
                             } else {
-                                message.append(getResources().getString(R.string.study_passwordresult_correct_impostor));
+                                message.append(getResources().getString(R.string.study_passwordresult_correct_impostor, 1 - confidence));
                             }
                             break;
                         case RESULT_CANCELED:
