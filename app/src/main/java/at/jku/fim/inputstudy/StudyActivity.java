@@ -15,6 +15,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -129,6 +130,13 @@ public class StudyActivity extends AppCompatActivity {
 
     private void processPasswordInput() {
         final AlertDialog.Builder builder = new AlertDialog.Builder(StudyActivity.this);
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
         if (passwordEditText.getText().toString().equals(password)) {
             /*Intent confidenceIntent = new Intent(this, PhonyKeyboard.class);
             confidenceIntent.setAction(BiometricsManager.BROADCAST_ACTION_GET_SCORE);*/
@@ -174,20 +182,17 @@ public class StudyActivity extends AppCompatActivity {
                 }
             }, null, RESULT_FIRST_USER, null, null);
 
-            progressDialog.setMessage(getResources().getString(R.string.study_yourpassword_verify));
+            progressDialog = ProgressDialog.show(this, getResources().getString(R.string.study_yourpassword_verify), null, true, false);
         } else {
-            builder.setTitle("Wrong");
-            builder.setMessage("Now you would have to try again.");
+            builder.setTitle(getResources().getString(R.string.study_passwordresult_wrong_title));
+            builder.setMessage(getResources().getString(R.string.study_passwordresult_wrong_text));
             builder.show();
         }
-        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
 
         passwordEditText.setText("");
+        passwordEditText.clearFocus();
+        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(passwordEditText.getWindowToken(), 0);
     }
 
     private class GeneratePasswordTask extends AsyncTask<Void, Void, String> {
