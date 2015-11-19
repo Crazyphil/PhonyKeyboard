@@ -43,9 +43,9 @@ public class StatisticalClassifier extends Classifier {
 
     /** Set to true when the user clicked the Next, Previous or Enter button and therefore submitted the input to the app **/
     private boolean submittedInput;
-    /** Set to true when calcConfidence() was successful **/
-    private boolean calculatedConfidence;
-    private double confidence = BiometricsManager.CONFIDENCE_NOT_ENOUGH_DATA;
+    /** Set to true when calcScore() was successful **/
+    private boolean calculatedScore;
+    private double score = BiometricsManager.SCORE_NOT_ENOUGH_DATA;
 
     public StatisticalClassifier(BiometricsManagerImpl manager) {
         super(manager);
@@ -66,12 +66,12 @@ public class StatisticalClassifier extends Classifier {
     }
 
     @Override
-    public double getConfidence() {
-        if (!calculatedConfidence) {
-            calcConfidence();
+    public double getScore() {
+        if (!calculatedScore) {
+            calcScore();
             saveBiometricData();
         }
-        return invalidData ? BiometricsManager.CONFIDENCE_CAPTURING_ERROR : confidence;
+        return invalidData ? BiometricsManager.SCORE_CAPTURING_ERROR : score;
     }
 
     @Override
@@ -118,8 +118,8 @@ public class StatisticalClassifier extends Classifier {
         }
 
         submittedInput = false;
-        calculatedConfidence = false;
-        confidence = BiometricsManager.CONFIDENCE_NOT_ENOUGH_DATA;
+        calculatedScore = false;
+        score = BiometricsManager.SCORE_NOT_ENOUGH_DATA;
 
         means = new double[c.getColumnCount()];
         acquisitions = new ArrayList<>(c.getColumnCount());
@@ -135,7 +135,7 @@ public class StatisticalClassifier extends Classifier {
         if (!done) {
             invalidData = true;
         } else {
-            calcConfidence();
+            calcScore();
         }
     }
 
@@ -239,12 +239,12 @@ public class StatisticalClassifier extends Classifier {
         }
     }
 
-    private void calcConfidence() {
-        if (confidence != BiometricsManager.CONFIDENCE_NOT_ENOUGH_DATA) return;
+    private void calcScore() {
+        if (score != BiometricsManager.SCORE_NOT_ENOUGH_DATA) return;
 
         if (acquisitions.get(0).length < TEMPLATE_SET_SIZE) {
             Log.i(TAG, "Template set too small (" + acquisitions.get(0).length + ") for authentication");
-            calculatedConfidence = true;
+            calculatedScore = true;
             return;
         }
 
@@ -272,8 +272,8 @@ public class StatisticalClassifier extends Classifier {
             mean += distance;
         }
         mean /= acquisitions.size();
-        confidence = mean;
-        calculatedConfidence = true;
+        score = mean;
+        calculatedScore = true;
         submittedInput = false;
     }
 
@@ -294,7 +294,7 @@ public class StatisticalClassifier extends Classifier {
     }
 
     private void saveBiometricData() {
-        if (invalidData || !calculatedConfidence) return;
+        if (invalidData || !calculatedScore) return;
 
         SQLiteDatabase db = manager.getDb();
         ContentValues values = new ContentValues(INDEX_SENSOR_START + dbContract.getSensorColumns().length + 2);

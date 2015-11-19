@@ -16,8 +16,8 @@ public abstract class Classifier {
         return null;
     }
 
-    public double getConfidence() {
-        return BiometricsManager.CONFIDENCE_NOT_ENOUGH_DATA;
+    public double getScore() {
+        return BiometricsManager.SCORE_NOT_ENOUGH_DATA;
     }
 
     public boolean clearData() {

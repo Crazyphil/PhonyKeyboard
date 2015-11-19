@@ -76,8 +76,8 @@ public class BiometricsManagerImpl extends BiometricsManager {
     }
 
     @Override
-    public double getConfidence() {
-        return classifier.getConfidence();
+    public double getScore() {
+        return classifier.getScore();
     }
 
     @Override

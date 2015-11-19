@@ -26,10 +26,10 @@ import at.jku.fim.phonykeyboard.latin.PhonyKeyboard;
 public abstract class BiometricsManager implements SensorEventListener {
     private static final String TAG = "BiometricsManager";
 
-    public static final String BROADCAST_ACTION_GET_CONFIDENCE = "at.jku.fim.phonykeyboard.BIOMETRICS_GET_CONFIDENCE";
-    public static final String BROADCAST_EXTRA_CONFIDENCE = "at.jku.fim.phonykeyboard.BIOMETRICS_CONFIDENCE";
+    public static final String BROADCAST_ACTION_GET_SCORE = "at.jku.fim.phonykeyboard.BIOMETRICS_GET_SCORE";
+    public static final String BROADCAST_EXTRA_SCORE = "at.jku.fim.phonykeyboard.BIOMETRICS_CONFIDENCE";
     public static final String BROADCAST_ACTION_CLEAR_DATA = "at.jku.fim.phonykeyboard.BIOMETRICS_CLEAR_DATA";
-    public static final double CONFIDENCE_NOT_ENOUGH_DATA = -1, CONFIDENCE_CAPTURING_ERROR = -2;
+    public static final double SCORE_NOT_ENOUGH_DATA = -1, SCORE_CAPTURING_ERROR = -2;
 
     private static BiometricsManager instance;
 
@@ -90,7 +90,7 @@ public abstract class BiometricsManager implements SensorEventListener {
         }
 
         receiver = new BiometricsReceiver();
-        IntentFilter filter = new IntentFilter(BROADCAST_ACTION_GET_CONFIDENCE);
+        IntentFilter filter = new IntentFilter(BROADCAST_ACTION_GET_SCORE);
         filter.addAction(BROADCAST_ACTION_CLEAR_DATA);
         filter.setPriority(1);
         keyboard.registerReceiver(receiver, filter);
@@ -109,7 +109,7 @@ public abstract class BiometricsManager implements SensorEventListener {
     public abstract void onKeyDown(final Key key, final MotionEvent event);
     public abstract void onKeyUp(final Key key, final MotionEvent event);
 
-    public abstract double getConfidence();
+    public abstract double getScore();
     public abstract boolean clearData();
 
     public String getSensorType(Sensor sensor) {
@@ -194,8 +194,8 @@ public abstract class BiometricsManager implements SensorEventListener {
         @Override
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
-                case BROADCAST_ACTION_GET_CONFIDENCE:
-                    getConfidence();
+                case BROADCAST_ACTION_GET_SCORE:
+                    getScore();
                     break;
                 case BROADCAST_ACTION_CLEAR_DATA:
                     clearData();
@@ -203,14 +203,14 @@ public abstract class BiometricsManager implements SensorEventListener {
             }
         }
 
-        public void getConfidence() {
+        public void getScore() {
             if (!isOrderedBroadcast()) return;
 
-            double confidence = BiometricsManager.this.getConfidence();
+            double confidence = BiometricsManager.this.getScore();
             Bundle result = new Bundle(1);
-            result.putDouble(BROADCAST_EXTRA_CONFIDENCE, confidence);
+            result.putDouble(BROADCAST_EXTRA_SCORE, confidence);
 
-            setResultCode((confidence == CONFIDENCE_NOT_ENOUGH_DATA || confidence == CONFIDENCE_CAPTURING_ERROR) ? Activity.RESULT_CANCELED : Activity.RESULT_OK);
+            setResultCode((confidence == SCORE_NOT_ENOUGH_DATA || confidence == SCORE_CAPTURING_ERROR) ? Activity.RESULT_CANCELED : Activity.RESULT_OK);
             setResultExtras(result);
         }
 

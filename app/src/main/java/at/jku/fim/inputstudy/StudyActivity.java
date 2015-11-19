@@ -131,12 +131,12 @@ public class StudyActivity extends AppCompatActivity {
         final AlertDialog.Builder builder = new AlertDialog.Builder(StudyActivity.this);
         if (passwordEditText.getText().toString().equals(password)) {
             /*Intent confidenceIntent = new Intent(this, PhonyKeyboard.class);
-            confidenceIntent.setAction(BiometricsManager.BROADCAST_ACTION_GET_CONFIDENCE);*/
-            Intent confidenceIntent = new Intent(BiometricsManager.BROADCAST_ACTION_GET_CONFIDENCE);
-            sendOrderedBroadcast(confidenceIntent, null, new BroadcastReceiver() {
+            confidenceIntent.setAction(BiometricsManager.BROADCAST_ACTION_GET_SCORE);*/
+            Intent scoreIntent = new Intent(BiometricsManager.BROADCAST_ACTION_GET_SCORE);
+            sendOrderedBroadcast(scoreIntent, null, new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
-                    if (!intent.getAction().equals(BiometricsManager.BROADCAST_ACTION_GET_CONFIDENCE)) {
+                    if (!intent.getAction().equals(BiometricsManager.BROADCAST_ACTION_GET_SCORE)) {
                         return;
                     }
 
@@ -145,19 +145,19 @@ public class StudyActivity extends AppCompatActivity {
                     message.append("\n");
                     switch (getResultCode()) {
                         case RESULT_OK:
-                            double confidence = getResultExtras(true).getDouble(BiometricsManager.BROADCAST_EXTRA_CONFIDENCE);
-                            if (confidence < 1) {
-                                message.append(getResources().getString(R.string.study_passwordresult_correct_user, confidence));
+                            double score = getResultExtras(true).getDouble(BiometricsManager.BROADCAST_EXTRA_SCORE);
+                            if (score < 1) {
+                                message.append(getResources().getString(R.string.study_passwordresult_correct_user, score));
                             } else {
-                                message.append(getResources().getString(R.string.study_passwordresult_correct_impostor, 1 - confidence));
+                                message.append(getResources().getString(R.string.study_passwordresult_correct_impostor, 1 - score));
                             }
                             break;
                         case RESULT_CANCELED:
-                            switch ((int)getResultExtras(false).getDouble(BiometricsManager.BROADCAST_EXTRA_CONFIDENCE)) {
-                                case (int)BiometricsManager.CONFIDENCE_NOT_ENOUGH_DATA:
+                            switch ((int)getResultExtras(false).getDouble(BiometricsManager.BROADCAST_EXTRA_SCORE)) {
+                                case (int)BiometricsManager.SCORE_NOT_ENOUGH_DATA:
                                     message.append(getResources().getString(R.string.study_passwordresult_correct_nodata));
                                     break;
-                                case (int)BiometricsManager.CONFIDENCE_CAPTURING_ERROR:
+                                case (int)BiometricsManager.SCORE_CAPTURING_ERROR:
                                     message.append(getResources().getString(R.string.study_passwordresult_correct_failed));
                                     break;
                             }

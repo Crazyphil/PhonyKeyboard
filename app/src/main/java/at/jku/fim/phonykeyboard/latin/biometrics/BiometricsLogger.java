@@ -56,8 +56,8 @@ public class BiometricsLogger extends BiometricsManager implements SensorEventLi
     }
 
     @Override
-    public double getConfidence() {
-        return CONFIDENCE_NOT_ENOUGH_DATA;
+    public double getScore() {
+        return SCORE_NOT_ENOUGH_DATA;
     }
 
     @Override
