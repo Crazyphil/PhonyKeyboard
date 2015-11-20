@@ -102,12 +102,6 @@ public class StudyActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onStop() {
-        preferences.edit().putString("password", password).apply();
-        super.onStop();
-    }
-
-    @Override
     protected void onDestroy() {
         passwordGenerator.destroy();
         super.onDestroy();
@@ -204,6 +198,7 @@ public class StudyActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String result) {
             password = result;
+            preferences.edit().putString("password", password).apply();
             if (passwordTextView != null) {
                 passwordTextView.setText(password);
             }

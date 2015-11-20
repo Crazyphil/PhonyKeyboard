@@ -703,7 +703,7 @@ Tip: You can download and remove dictionaries by going to &lt;b>Language &amp; i
     <string name="study_passwordresult_correct_text">Now you would be logged in.</string>
     <string name="study_passwordresult_correct_nobiometrics">No biometric verification was used.</string>
     <string name="study_passwordresult_correct_nodata">Your biometric profile is not complete yet.</string>
-    <string name="study_passwordresult_correct_failed">Because of your typing style, no biometric profile was created.</string>
-    <string name="study_passwordresult_correct_user">We\'re %.2d %% certain it\'s you.</string>
-    <string name="study_passwordresult_correct_impostor">There\'s a %.2d %% chance you\'re an impostor.</string>
+    <string name="study_passwordresult_correct_failed">Please type fluently to enable biometric verification.</string>
+    <string name="study_passwordresult_correct_user">User, you scored %1$.2f.</string>
+    <string name="study_passwordresult_correct_impostor">Impostor, you scored %1$.2f.</string>
 </resources>
