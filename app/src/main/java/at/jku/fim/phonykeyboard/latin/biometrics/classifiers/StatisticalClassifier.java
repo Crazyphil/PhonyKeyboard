@@ -32,7 +32,7 @@ public class StatisticalClassifier extends Classifier {
     private static final int TEMPLATE_SET_SIZE = 10;
 
     private final StatisticalClassifierContract dbContract;
-    private final Pattern multiValueRegex = Pattern.compile(MULTI_VALUE_SEPARATOR);
+    private final Pattern multiValueRegex = Pattern.compile("\\" + MULTI_VALUE_SEPARATOR);
 
     private int screenOrientation;
     private List<double[][][]> acquisitions;  // datapoint<[row][col][values]>
@@ -70,8 +70,9 @@ public class StatisticalClassifier extends Classifier {
         if (!calculatedScore) {
             calcScore();
             saveBiometricData();
+            resetData();
         }
-        return invalidData ? BiometricsManager.SCORE_CAPTURING_ERROR : score;
+        return score;
     }
 
     @Override
@@ -87,7 +88,7 @@ public class StatisticalClassifier extends Classifier {
             if (text != null && text.length() != 0) {
                 invalidData = true;
             } else {
-                recoverFromInvalidData();
+                resetData();
             }
             return;
         }
@@ -117,6 +118,7 @@ public class StatisticalClassifier extends Classifier {
             currentData.add(new LinkedList<double[]>());
         }
 
+        invalidData = false;
         submittedInput = false;
         calculatedScore = false;
         score = BiometricsManager.SCORE_NOT_ENOUGH_DATA;
@@ -133,17 +135,23 @@ public class StatisticalClassifier extends Classifier {
     @Override
     public void onFinishInput(boolean done) {
         if (!done) {
-            invalidData = true;
-        } else {
+            CharSequence text = manager.getInputText();
+            if (text != null && text.length() != 0) {
+                invalidData = true;
+            }
+        } else if (!calculatedScore) {
             calcScore();
+            saveBiometricData();
+            resetData();
         }
     }
 
     @Override
     public void onKeyEvent(BiometricsEntry entry) {
+        if (submittedInput) return;
         if (invalidData) {
             if (manager.getInputText().length() == 0) {
-                recoverFromInvalidData();
+                resetData();
             } else {
                 return;
             }
@@ -199,6 +207,7 @@ public class StatisticalClassifier extends Classifier {
         int row = 0;
         while (c.moveToNext()) {
             String[] rowValues = CsvUtils.split(c.getString(columnIndex));
+            values[row] = new double[rowValues.length][0];
             for (int col = 0; col < rowValues.length; col++) {
                 values[row][col] = stringsToDoubles(multiValueRegex.split(rowValues[col]));
             }
@@ -212,8 +221,9 @@ public class StatisticalClassifier extends Classifier {
                 if (e == i) continue;
                 mean += getDistance(values[e], values[i]);
             }
+            means[columnIndex] += mean / Math.max(c.getCount() - 1, 1);
         }
-        means[columnIndex] = mean / c.getCount() - 1;
+        means[columnIndex] /= c.getCount();
     }
 
     /**
@@ -232,25 +242,28 @@ public class StatisticalClassifier extends Classifier {
         return distance;
     }
 
-    private void recoverFromInvalidData() {
+    private void resetData() {
         invalidData = false;
+        submittedInput = false;
         for (List<double[]> data : currentData) {
             data.clear();
         }
+        activeEntries.clear();
     }
 
     private void calcScore() {
-        if (score != BiometricsManager.SCORE_NOT_ENOUGH_DATA) return;
-
         if (acquisitions.get(0).length < TEMPLATE_SET_SIZE) {
             Log.i(TAG, "Template set too small (" + acquisitions.get(0).length + ") for authentication");
+            score = BiometricsManager.SCORE_NOT_ENOUGH_DATA;
             calculatedScore = true;
             return;
         }
 
         if (currentData.size() != acquisitions.size()) {
             Log.e(TAG, "Authentication data has " + currentData.size() + " datapoints, needs " + acquisitions.size());
+            score = BiometricsManager.SCORE_CAPTURING_ERROR;
             invalidData = true;
+            calculatedScore = true;
             return;
         }
 
@@ -261,6 +274,7 @@ public class StatisticalClassifier extends Classifier {
             for (int row = 0; row < acquisitions.get(i).length; row++) {
                 if (currentData.get(i).size() != acquisitions.get(i)[row].length) {
                     Log.e(TAG, "Authentication data has " + currentData.get(i).size() + " samples, needs " + acquisitions.get(i)[row].length);
+                    score = BiometricsManager.SCORE_CAPTURING_ERROR;
                     invalidData = true;
                     return;
                 }
@@ -268,13 +282,12 @@ public class StatisticalClassifier extends Classifier {
                 double[][] rowData = new double[currentData.get(i).size()][currentData.get(i).get(0).length];
                 distance += getDistance(acquisitions.get(i)[row], currentData.get(i).toArray(rowData));
             }
-            distance /= means[i];
+            distance /= means[i] == 0f ? 1f : means[i];
             mean += distance;
         }
         mean /= acquisitions.size();
         score = mean;
         calculatedScore = true;
-        submittedInput = false;
     }
 
     private double[] stringsToDoubles(String[] strings) {
@@ -299,12 +312,16 @@ public class StatisticalClassifier extends Classifier {
         SQLiteDatabase db = manager.getDb();
         ContentValues values = new ContentValues(INDEX_SENSOR_START + dbContract.getSensorColumns().length + 2);
         values.put(StatisticalClassifierContract.StatisticalClassifierData.COLUMN_CONTEXT, manager.getBiometricsContext());
+        values.put(StatisticalClassifierContract.StatisticalClassifierData.COLUMN_SCREEN_ORIENTATION, screenOrientation);
         values.put(StatisticalClassifierContract.StatisticalClassifierData.COLUMN_KEY_DOWNDOWN, CsvUtils.join(toCsvStrings(currentData.get(INDEX_DOWNDOWN))));
         values.put(StatisticalClassifierContract.StatisticalClassifierData.COLUMN_KEY_DOWNUP, CsvUtils.join(toCsvStrings(currentData.get(INDEX_DOWNUP))));
         values.put(StatisticalClassifierContract.StatisticalClassifierData.COLUMN_SIZE, CsvUtils.join(toCsvStrings(currentData.get(INDEX_SIZE))));
         values.put(StatisticalClassifierContract.StatisticalClassifierData.COLUMN_ORIENTATION, CsvUtils.join(toCsvStrings(currentData.get(INDEX_ORIENTATION))));
         values.put(StatisticalClassifierContract.StatisticalClassifierData.COLUMN_PRESSURE, CsvUtils.join(toCsvStrings(currentData.get(INDEX_PRESSURE))));
         values.put(StatisticalClassifierContract.StatisticalClassifierData.COLUMN_POSITION, CsvUtils.join(toCsvStrings(currentData.get(INDEX_POSITION))));
+        for (int i = 0; i < dbContract.getSensorColumns().length; i++) {
+            values.put(dbContract.getSensorColumns()[i], CsvUtils.join(toCsvStrings(currentData.get(INDEX_SENSOR_START + i))));
+        }
         db.insert(StatisticalClassifierContract.StatisticalClassifierData.TABLE_NAME, null, values);
     }
 
@@ -363,6 +380,12 @@ public class StatisticalClassifier extends Classifier {
                     }
                 }
             }
+        }
+
+        @Override
+        public void clear() {
+            super.clear();
+            pendingRemoval.clear();
         }
 
         private void removePending() {
