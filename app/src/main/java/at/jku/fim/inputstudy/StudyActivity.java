@@ -7,6 +7,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.databinding.DataBindingUtil;
+import android.databinding.ObservableField;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -16,39 +18,35 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.TextView;
 
 import at.jku.fim.phonykeyboard.latin.R;
 import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManager;
+import at.jku.fim.phonykeyboard.latin.databinding.StudyActivityBinding;
 
 public class StudyActivity extends AppCompatActivity {
     private static final int PASSWORD_WORD_LENGTH = 4;
 
     private SharedPreferences preferences;
-    private String password;
+    private ObservableField<String> password;
     private PasswordGenerator passwordGenerator;
 
     private ProgressDialog progressDialog;
-    private TextView passwordTextView;
-    private EditText passwordEditText;
-    private ImageButton loginImageButton;
+    private StudyActivityBinding binding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        password = new ObservableField<>();
         if (savedInstanceState != null) {
-            password = savedInstanceState.getString("password");
+            password.set(savedInstanceState.getString("password"));
         }
         preferences = getSharedPreferences("StudyActivity", 0);
         passwordGenerator = new PasswordGenerator(this);
+        binding = DataBindingUtil.setContentView(this, R.layout.study_activity);
+        binding.setPassword(password);
 
-        setContentView(R.layout.study_layout);
-
-        passwordTextView = (TextView)findViewById(R.id.study_layout_password_text);
-        passwordEditText = (EditText)findViewById(R.id.study_layout_password_input);
-        passwordEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+        binding.passwordInput.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_NULL || actionId == EditorInfo.IME_ACTION_DONE) {
@@ -58,8 +56,7 @@ public class StudyActivity extends AppCompatActivity {
                 return false;
             }
         });
-        loginImageButton = (ImageButton)findViewById(R.id.study_layout_login_action);
-        loginImageButton.setOnClickListener(new View.OnClickListener() {
+        binding.loginAction.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 processPasswordInput();
@@ -78,7 +75,7 @@ public class StudyActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         if (preferences.contains("password")) {
-            password = preferences.getString("password", null);
+            password.set(preferences.getString("password", null));
         }
     }
 
@@ -86,17 +83,17 @@ public class StudyActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        if (password == null) {
+        if (password.get() == null) {
             progressDialog = ProgressDialog.show(this, getResources().getString(R.string.study_yourpassword_progress), null, true);
             new GeneratePasswordTask().execute();
-        } else {
-            passwordTextView.setText(password);
-        }
+        }/* else {
+            binding.studyLayoutPasswordText.setText(password);
+        }*/
     }
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
-        savedInstanceState.putString("password", password);
+        savedInstanceState.putString("password", password.get());
 
         super.onSaveInstanceState(savedInstanceState);
     }
@@ -131,7 +128,7 @@ public class StudyActivity extends AppCompatActivity {
             }
         });
 
-        if (passwordEditText.getText().toString().equals(password)) {
+        if (binding.passwordInput.getText().toString().equals(password)) {
             /*Intent confidenceIntent = new Intent(this, PhonyKeyboard.class);
             confidenceIntent.setAction(BiometricsManager.BROADCAST_ACTION_GET_SCORE);*/
             Intent scoreIntent = new Intent(BiometricsManager.BROADCAST_ACTION_GET_SCORE);
@@ -183,10 +180,10 @@ public class StudyActivity extends AppCompatActivity {
             builder.show();
         }
 
-        passwordEditText.setText("");
-        passwordEditText.clearFocus();
+        binding.passwordInput.setText("");
+        binding.passwordInput.clearFocus();
         InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.hideSoftInputFromWindow(passwordEditText.getWindowToken(), 0);
+        imm.hideSoftInputFromWindow(binding.passwordInput.getWindowToken(), 0);
     }
 
     private class GeneratePasswordTask extends AsyncTask<Void, Void, String> {
@@ -197,11 +194,11 @@ public class StudyActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String result) {
-            password = result;
-            preferences.edit().putString("password", password).apply();
-            if (passwordTextView != null) {
-                passwordTextView.setText(password);
-            }
+            password.set(result);
+            preferences.edit().putString("password", password.get()).apply();
+            /*if (binding.studyLayoutPasswordText != null) {
+                binding.studyLayoutPasswordText.setText(password);
+            }*/
             if (progressDialog != null) {
                 progressDialog.dismiss();
             }
