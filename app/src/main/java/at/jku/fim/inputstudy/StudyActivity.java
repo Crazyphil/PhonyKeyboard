@@ -20,6 +20,9 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import at.jku.fim.phonykeyboard.latin.R;
 import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManager;
 import at.jku.fim.phonykeyboard.latin.databinding.StudyActivityBinding;
@@ -28,7 +31,7 @@ public class StudyActivity extends AppCompatActivity {
     private static final int PASSWORD_WORD_LENGTH = 4;
 
     private SharedPreferences preferences;
-    private ObservableField<String> password;
+    private ObservableField<String> password, lastLogin;
     private PasswordGenerator passwordGenerator;
 
     private ProgressDialog progressDialog;
@@ -38,13 +41,16 @@ public class StudyActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         password = new ObservableField<>();
+        lastLogin = new ObservableField<>();
         if (savedInstanceState != null) {
             password.set(savedInstanceState.getString("password"));
+            lastLogin.set(savedInstanceState.getString("lastLogin"));
         }
         preferences = getSharedPreferences("StudyActivity", 0);
         passwordGenerator = new PasswordGenerator(this);
         binding = DataBindingUtil.setContentView(this, R.layout.study_activity);
         binding.setPassword(password);
+        binding.setLastLogin(lastLogin);
 
         binding.passwordInput.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -77,6 +83,9 @@ public class StudyActivity extends AppCompatActivity {
         if (preferences.contains("password")) {
             password.set(preferences.getString("password", null));
         }
+        if (preferences.contains("lastLogin")) {
+            lastLogin.set(preferences.getString("lastLogin", null));
+        }
     }
 
     @Override
@@ -86,16 +95,21 @@ public class StudyActivity extends AppCompatActivity {
         if (password.get() == null) {
             progressDialog = ProgressDialog.show(this, getResources().getString(R.string.study_yourpassword_progress), null, true);
             new GeneratePasswordTask().execute();
-        }/* else {
-            binding.studyLayoutPasswordText.setText(password);
-        }*/
+        }
     }
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
         savedInstanceState.putString("password", password.get());
+        savedInstanceState.putString("lastLogin", lastLogin.get());
 
         super.onSaveInstanceState(savedInstanceState);
+    }
+
+    @Override
+    protected void onStop() {
+        preferences.edit().putString("lastLogin", lastLogin.get()).apply();
+        super.onStop();
     }
 
     @Override
@@ -128,7 +142,7 @@ public class StudyActivity extends AppCompatActivity {
             }
         });
 
-        if (binding.passwordInput.getText().toString().equals(password)) {
+        if (binding.passwordInput.getText().toString().equals(password.get())) {
             /*Intent confidenceIntent = new Intent(this, PhonyKeyboard.class);
             confidenceIntent.setAction(BiometricsManager.BROADCAST_ACTION_GET_SCORE);*/
             Intent scoreIntent = new Intent(BiometricsManager.BROADCAST_ACTION_GET_SCORE);
@@ -150,6 +164,7 @@ public class StudyActivity extends AppCompatActivity {
                             } else {
                                 message.append(getResources().getString(R.string.study_passwordresult_correct_impostor, 1 - score));
                             }
+                            lastLogin.set(SimpleDateFormat.getDateTimeInstance().format(new Date()));
                             break;
                         case RESULT_CANCELED:
                             switch ((int)getResultExtras(false).getDouble(BiometricsManager.BROADCAST_EXTRA_SCORE)) {
@@ -196,9 +211,6 @@ public class StudyActivity extends AppCompatActivity {
         protected void onPostExecute(String result) {
             password.set(result);
             preferences.edit().putString("password", password.get()).apply();
-            /*if (binding.studyLayoutPasswordText != null) {
-                binding.studyLayoutPasswordText.setText(password);
-            }*/
             if (progressDialog != null) {
                 progressDialog.dismiss();
             }

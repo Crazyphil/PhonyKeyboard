@@ -698,6 +698,8 @@ Tip: You can download and remove dictionaries by going to &lt;b>Language &amp; i
     <!-- Strings shown in the input study activity -->
     <string name="study_title">Input Study</string>
     <string name="study_action_settings">Settings</string>
+    <string name="study_lastlogin_title">Your last successful login was</string>
+    <string name="study_lastlogin_text">never</string>
     <string name="study_yourpassword_title">Your password is:</string>
     <string name="study_yourpassword_action">Please enter your password below to login.</string>
     <string name="study_yourpassword_progress">Generating your password…</string>
