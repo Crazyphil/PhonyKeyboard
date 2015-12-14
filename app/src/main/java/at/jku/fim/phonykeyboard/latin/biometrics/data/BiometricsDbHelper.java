@@ -47,6 +47,16 @@ public class BiometricsDbHelper extends SQLiteOpenHelper {
         contract.onCreate(db);
     }
 
+    private void upgradeContractTables(SQLiteDatabase db, Contract contract, int oldVersion, ContentValues values) {
+        if (values == null) {
+            values = new ContentValues(2);
+        }
+        values.put(BiometricsContract.ContractVersions.COLUMN_CONTRACT, contract.getClass().getSimpleName());
+        values.put(BiometricsContract.ContractVersions.COLUMN_VERSION, contract.getVersion());
+        db.update(BiometricsContract.ContractVersions.TABLE_NAME, values, BiometricsContract.ContractVersions.COLUMN_CONTRACT + " = ?", new String[] { contract.getClass().getSimpleName() });
+        contract.onUpgrade(db, oldVersion, contract.getVersion());
+    }
+
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
     }
@@ -70,14 +80,16 @@ public class BiometricsDbHelper extends SQLiteOpenHelper {
         }
         selection.append(")");
 
-        Cursor c = db.query(BiometricsContract.ContractVersions.TABLE_NAME, new String[] { BiometricsContract.ContractVersions.COLUMN_CONTRACT, BiometricsContract.ContractVersions.COLUMN_VERSION }, selection.toString(), selectionArgs, null, null, null);
+        Cursor c = db.query(BiometricsContract.ContractVersions.TABLE_NAME,
+                new String[] { BiometricsContract.ContractVersions.COLUMN_CONTRACT, BiometricsContract.ContractVersions.COLUMN_VERSION },
+                selection.toString(), selectionArgs, null, null, null);
         for (Contract contract : contracts) {
             c.moveToPosition(-1);
             while (c.moveToNext()) {
                 if (c.getString(c.getColumnIndex(BiometricsContract.ContractVersions.COLUMN_CONTRACT)).equals(contract.getClass().getSimpleName())) {
                     int version = c.getInt(c.getColumnIndex(BiometricsContract.ContractVersions.COLUMN_VERSION));
                     if (contract.getVersion() > version) {
-                        contract.onUpgrade(db, version, contract.getVersion());
+                        upgradeContractTables(db, contract, version, null);
                     }
                     break;
                 }
@@ -87,5 +99,27 @@ public class BiometricsDbHelper extends SQLiteOpenHelper {
             }
         }
         c.close();
+    }
+
+    public void addContract(Contract contract) {
+        contracts.add(contract);
+        if (wasCreated) {
+            createContractTables(getWritableDatabase(), contract, null);
+        } else {
+            Cursor c = getWritableDatabase().query(BiometricsContract.ContractVersions.TABLE_NAME,
+                    new String[] { BiometricsContract.ContractVersions.COLUMN_CONTRACT, BiometricsContract.ContractVersions.COLUMN_VERSION },
+                    BiometricsContract.ContractVersions.COLUMN_CONTRACT + " = ?", new String[] { contract.getClass().getSimpleName() }, null, null, null);
+            if (c.getCount() != 1) {
+                createContractTables(getWritableDatabase(), contract, null);
+            } else {
+                c.moveToFirst();
+                upgradeContractTables(getWritableDatabase(), contract, c.getInt(c.getColumnIndex(BiometricsContract.ContractVersions.COLUMN_CONTRACT)), null);
+            }
+            c.close();
+        }
+    }
+
+    public void removeContract(Contract contract) {
+        contracts.remove(contract);
     }
 }
