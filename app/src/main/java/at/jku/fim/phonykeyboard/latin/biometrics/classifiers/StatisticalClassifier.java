@@ -28,7 +28,6 @@ import at.jku.fim.phonykeyboard.latin.utils.CsvUtils;
 public class StatisticalClassifier extends Classifier {
     private static final String TAG = "StatisticalClassifier";
     private static final int INDEX_DOWNDOWN = 0, INDEX_DOWNUP = 1, INDEX_SIZE =  2, INDEX_ORIENTATION = 3, INDEX_PRESSURE = 4, INDEX_POSITION = 5, INDEX_SENSOR_START = 6;
-    private static final String MULTI_VALUE_SEPARATOR = "|";
     private static final int TEMPLATE_SET_SIZE = 10;
 
     private final StatisticalClassifierContract dbContract;
@@ -323,114 +322,5 @@ public class StatisticalClassifier extends Classifier {
             values.put(dbContract.getSensorColumns()[i], CsvUtils.join(toCsvStrings(currentData.get(INDEX_SENSOR_START + i))));
         }
         db.insert(StatisticalClassifierContract.StatisticalClassifierData.TABLE_NAME, null, values);
-    }
-
-    private String[] toCsvStrings(List<double[]> values) {
-        String[] strings = new String[values.size()];
-
-        StringBuilder sb = new StringBuilder(3 + 2);
-        for (int i = 0; i < values.size(); i++) {
-            for (int j = 0; j < values.get(i).length; j++) {
-                if (j > 0) {
-                    sb.append(MULTI_VALUE_SEPARATOR);
-                }
-                sb.append(values.get(i)[j]);
-            }
-            strings[i] = sb.toString();
-            sb.delete(0, sb.length());
-        }
-        return strings;
-    }
-
-    private static class ActiveBiometricsEntries extends LinkedList<BiometricsEntry> {
-        List<BiometricsEntry> pendingRemoval = new LinkedList<>();
-
-        public BiometricsEntry getDownEntry(int pointerId) {
-            for (BiometricsEntry entry : this) {
-                if (entry.getPointerId() == pointerId) {
-                    return entry;
-                }
-            }
-            return null;
-        }
-
-        public BiometricsEntry getLastDownEntry(long timestamp) {
-            long maxTimestamp = 0;
-            BiometricsEntry foundEntry = null;
-            for (BiometricsEntry entry : this) {
-                if (entry.getEvent() == BiometricsEntry.EVENT_DOWN && entry.getTimestamp() < timestamp && entry.getTimestamp() > maxTimestamp) {
-                    maxTimestamp = entry.getTimestamp();
-                    foundEntry = entry;
-                }
-            }
-            return foundEntry;
-        }
-
-        public void removeById(int pointerId) {
-            removePending();
-
-            ListIterator<BiometricsEntry> iter = listIterator();
-            while (iter.hasNext()) {
-                BiometricsEntry entry = iter.next();
-                if (entry.getPointerId() == pointerId) {
-                    if (size() > 1) {
-                        iter.remove();
-                    } else {
-                        pendingRemoval.add(entry);
-                    }
-                }
-            }
-        }
-
-        @Override
-        public void clear() {
-            super.clear();
-            pendingRemoval.clear();
-        }
-
-        private void removePending() {
-            if (size() <= 1) return;
-            ListIterator<BiometricsEntry> iter = pendingRemoval.listIterator();
-            while (iter.hasNext()) {
-                BiometricsEntry entry = iter.next();
-                if (size() > 1) {
-                    remove(entry);
-                    iter.remove();
-                }
-            }
-        }
-    }
-
-    // Source: http://stackoverflow.com/questions/1240077/why-cant-i-use-foreach-on-java-enumeration/17960641#17960641
-    private static class IterableEnumeration<T> implements Iterable<T>, Iterator<T>
-    {
-        private final Enumeration<T> enumeration;
-        private boolean used = false;
-
-        IterableEnumeration(final Enumeration<T> enm) {
-            enumeration = enm;
-        }
-
-        public Iterator<T> iterator() {
-            if (used) throw new IllegalStateException("Cannot use iterator from asIterable wrapper more than once");
-            used = true;
-            return this;
-        }
-
-        public boolean hasNext() {
-            return enumeration.hasMoreElements();
-        }
-
-        public T next() {
-            return enumeration.nextElement();
-        }
-
-        public void remove() {
-            throw new UnsupportedOperationException("Cannot remove elements from AsIterator wrapper around Enumeration");
-        }
-
-        public static <T> Iterable<T> asIterable(final Enumeration<T> enm) {
-            return new IterableEnumeration<>(enm);
-        }
     }
 }
