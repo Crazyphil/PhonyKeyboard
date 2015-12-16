@@ -59,12 +59,13 @@ public class CaptureClassifier extends Classifier {
 
     @Override
     public double getScore() {
+        boolean isInvalid = invalidData;
         if (!sentScore) {
             saveBiometricData();
             resetData();
             sentScore = true;
         }
-        return invalidData ? BiometricsManager.SCORE_CAPTURING_ERROR : BiometricsManager.SCORE_NOT_ENOUGH_DATA;
+        return isInvalid ? BiometricsManager.SCORE_CAPTURING_ERROR : BiometricsManager.SCORE_NOT_ENOUGH_DATA;
     }
 
     public long getCaptureCount() {
