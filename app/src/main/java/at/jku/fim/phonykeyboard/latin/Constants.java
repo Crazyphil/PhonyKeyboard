@@ -57,7 +57,15 @@ public final class Constants {
         @SuppressWarnings("dep-ann")
         public static final String FORCE_ASCII = "forceAscii";
 
+        /**
+         * The private IME option used to state a shared biometrics context in which all biometric
+         * data is shared between components.
+         * WARNING: Any app can state any context, which bears a potential security risk of deleted,
+         * modified and captured data. Don't use in high security environments!
+         */
         public static final String BIOMETRICS_CONTEXT = "at.jku.fim.phonykeyboard.biometricsContext";
+
+        public static final String INTERNAL_BIOMETRICS_CLASSIFIER = "at.jku.fim.phonykeyboard.biometricsClassifier";
 
         private ImeOption() {
             // This utility class is not publicly instantiable.

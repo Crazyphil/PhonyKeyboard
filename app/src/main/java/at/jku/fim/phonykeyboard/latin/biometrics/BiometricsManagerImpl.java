@@ -4,13 +4,15 @@ import android.content.ContentValues;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteDoneException;
-import android.os.Build;
+import android.os.Bundle;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.inputmethod.EditorInfo;
 
 import at.jku.fim.phonykeyboard.keyboard.Key;
 import at.jku.fim.phonykeyboard.latin.Constants;
 import at.jku.fim.phonykeyboard.latin.PhonyKeyboard;
+import at.jku.fim.phonykeyboard.latin.biometrics.classifiers.CaptureClassifier;
 import at.jku.fim.phonykeyboard.latin.biometrics.classifiers.Classifier;
 import at.jku.fim.phonykeyboard.latin.biometrics.classifiers.StatisticalClassifier;
 import at.jku.fim.phonykeyboard.latin.biometrics.data.BiometricsContract;
@@ -18,10 +20,14 @@ import at.jku.fim.phonykeyboard.latin.biometrics.data.BiometricsDbHelper;
 import at.jku.fim.phonykeyboard.latin.utils.StringUtils;
 
 public class BiometricsManagerImpl extends BiometricsManager {
+    public static final String TAG = "BiometricsManagerImpl";
+    public static final String INTERNAL_BROADCAST_EXTRA_CAPTURE_COUNT = "at.jku.fim.phonykeyboard.internal.BIOMETRICS_CAPTURE_COUNT";
+
     private Classifier classifier;
     private BiometricsDbHelper dbHelper;
     private SQLiteDatabase db;
     private long currentBiometricsContext;
+    private boolean hasCustomClassifier;
 
     @Override
     public void init(PhonyKeyboard context) {
@@ -34,17 +40,45 @@ public class BiometricsManagerImpl extends BiometricsManager {
     @Override
     public void onStartInputView(EditorInfo editorInfo, boolean restarting) {
         if (!restarting) {
+            String packageName = getVerifiedPackageName(editorInfo);
+            String classifierName = null;
+            if (packageName.equals(getContext().getPackageName())) {
+                // Evaluate internal options
+                classifierName = StringUtils.valueOfCommaSplittableKeyValueText(Constants.ImeOption.INTERNAL_BIOMETRICS_CLASSIFIER, editorInfo.privateImeOptions);
+                if (classifierName != null && !classifier.getClass().equals(getClassifierByName(classifierName))) {
+                    try {
+                        Classifier newClassifier = getClassifierByName(classifierName).getConstructor(BiometricsManagerImpl.class).newInstance(this);
+                        swapClassifier(newClassifier);
+                    } catch (Exception e) {
+                        // Must not occur - else check conformity of reflection code with real class constructor
+                        Log.wtf(TAG, "Could not instantiate internal classifier", e);
+                    }
+                    hasCustomClassifier = true;
+                }
+            }
+            if (classifierName == null && hasCustomClassifier) {
+                // Revert to default class if internal override is not set
+                if (!classifier.getClass().equals(StatisticalClassifier.class)) {
+                    swapClassifier(new StatisticalClassifier(this));
+                }
+                hasCustomClassifier = false;
+            }
+
             String context = StringUtils.valueOfCommaSplittableKeyValueText(Constants.ImeOption.BIOMETRICS_CONTEXT, editorInfo.privateImeOptions);
             if (context == null || context.isEmpty()) {
-                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP_MR1) {
-                    context = getContext().getPackageManager().getNameForUid(((PhonyKeyboard) getContext()).getCurrentInputBinding().getUid());
-                } else {
-                    context = editorInfo.packageName;    // Package name is system verified since Android M
-                }
+                context = packageName;
             }
             currentBiometricsContext = getBiometricsContext(context);
         }
         classifier.onStartInput(currentBiometricsContext, restarting);
+    }
+
+    private void swapClassifier(Classifier newClassifier) {
+        dbHelper.removeContract(classifier.getDatabaseContract());
+        classifier.onDestroy();
+        classifier = newClassifier;
+        classifier.onCreate();
+        dbHelper.addContract(classifier.getDatabaseContract());
     }
 
     @Override
@@ -81,6 +115,15 @@ public class BiometricsManagerImpl extends BiometricsManager {
     }
 
     @Override
+    protected void addExtraScoreData(Bundle result) {
+        super.addExtraScoreData(result);
+
+        if (classifier instanceof CaptureClassifier) {
+            result.putLong(INTERNAL_BROADCAST_EXTRA_CAPTURE_COUNT, ((CaptureClassifier)classifier).getCaptureCount());
+        }
+    }
+
+    @Override
     public boolean clearData() {
         return classifier.clearData();
     }
@@ -104,5 +147,14 @@ public class BiometricsManagerImpl extends BiometricsManager {
             id = db.insert(BiometricsContract.Contexts.TABLE_NAME, null, values);
         }
         return id;
+    }
+
+    private Class<? extends Classifier> getClassifierByName(String name) {
+        switch (name) {
+            case "CaptureClassifier":
+                return CaptureClassifier.class;
+            default:
+                return StatisticalClassifier.class;
+        }
     }
 }

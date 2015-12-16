@@ -700,6 +700,14 @@ Tip: You can download and remove dictionaries by going to &lt;b>Language &amp; i
     <string name="study_action_settings">Settings</string>
     <string name="study_lastlogin_title">Your last successful login was</string>
     <string name="study_lastlogin_text">never</string>
+    <string name="study_capture_motivation_0">Start by entering your password.</string>
+    <string name="study_capture_motivation_1">Thanks for helping.</string>
+    <string name="study_capture_motivation_10">Off to a good start.</string>
+    <string name="study_capture_motivation_30">You\'re getting the hang of it.</string>
+    <string name="study_capture_motivation_50">Half there. Great!</string>
+    <string name="study_capture_motivation_70">Hang in there, the goal is near!</string>
+    <string name="study_capture_motivation_90">Almost done. You can do it!</string>
+    <string name="study_capture_motivation_100">You did it!</string>
     <string name="study_yourpassword_title">Your password is:</string>
     <string name="study_yourpassword_action">Please enter your password below to login.</string>
     <string name="study_yourpassword_progress">Generating your password…</string>

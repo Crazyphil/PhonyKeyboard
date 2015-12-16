@@ -44,8 +44,7 @@ public abstract class BiometricsManager implements SensorEventListener {
     protected BiometricsManager() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
             sensorTypes = new int[] { Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_GRAVITY, Sensor.TYPE_GYROSCOPE, Sensor.TYPE_GYROSCOPE_UNCALIBRATED, Sensor.TYPE_LINEAR_ACCELERATION, Sensor.TYPE_ROTATION_VECTOR };
-        }
-        else {
+        } else {
             sensorTypes = new int[] { Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_GRAVITY, Sensor.TYPE_GYROSCOPE, Sensor.TYPE_LINEAR_ACCELERATION, Sensor.TYPE_ROTATION_VECTOR };
         }
     }
@@ -169,6 +168,14 @@ public abstract class BiometricsManager implements SensorEventListener {
         return keyboard.getText();
     }
 
+    public String getVerifiedPackageName(EditorInfo editorInfo) {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP_MR1) {
+            return getContext().getPackageManager().getNameForUid(((PhonyKeyboard)getContext()).getCurrentInputBinding().getUid());
+        } else {
+            return editorInfo.packageName;    // Package name is system verified since Android M
+        }
+    }
+
     protected BiometricsEntry buildEntry(Key key, MotionEvent event) {
         int eventType = BiometricsEntry.EVENT_DOWN;
         if ((event.getAction() & (MotionEvent.ACTION_POINTER_UP | MotionEvent.ACTION_UP)) > 0) {
@@ -184,6 +191,10 @@ public abstract class BiometricsManager implements SensorEventListener {
             entry.addSensorData(getSensors().get(sensor));
         }
         return entry;
+    }
+
+    protected void addExtraScoreData(Bundle result) {
+        // TODO: Add score thresholds for low/medium/high security
     }
 
     protected Context getContext() {
@@ -209,6 +220,7 @@ public abstract class BiometricsManager implements SensorEventListener {
             double confidence = BiometricsManager.this.getScore();
             Bundle result = new Bundle(1);
             result.putDouble(BROADCAST_EXTRA_SCORE, confidence);
+            BiometricsManager.this.addExtraScoreData(result);
 
             setResultCode((confidence == SCORE_NOT_ENOUGH_DATA || confidence == SCORE_CAPTURING_ERROR) ? Activity.RESULT_CANCELED : Activity.RESULT_OK);
             setResultExtras(result);

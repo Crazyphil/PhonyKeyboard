@@ -8,7 +8,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
+import android.databinding.ObservableBoolean;
 import android.databinding.ObservableField;
+import android.databinding.ObservableInt;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -23,15 +25,19 @@ import android.widget.TextView;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import at.jku.fim.phonykeyboard.latin.Constants;
 import at.jku.fim.phonykeyboard.latin.R;
 import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManager;
+import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManagerImpl;
 import at.jku.fim.phonykeyboard.latin.databinding.StudyActivityBinding;
 
 public class StudyActivity extends AppCompatActivity {
     private static final int PASSWORD_WORD_LENGTH = 4;
 
     private SharedPreferences preferences;
-    private ObservableField<String> password, lastLogin;
+    private ObservableField<String> password, lastLogin, captureMotivation;
+    private ObservableInt captureCount;
+    private ObservableBoolean isCaptureMode;
     private PasswordGenerator passwordGenerator;
 
     private ProgressDialog progressDialog;
@@ -42,17 +48,28 @@ public class StudyActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         password = new ObservableField<>();
         lastLogin = new ObservableField<>();
+        captureMotivation = new ObservableField<>();
+        isCaptureMode = new ObservableBoolean(getIntent().getAction() != null);
+        captureCount = new ObservableInt();
+
         if (savedInstanceState != null) {
             password.set(savedInstanceState.getString("password"));
             lastLogin.set(savedInstanceState.getString("lastLogin"));
+            captureCount.set(savedInstanceState.getInt("captureCount"));
         }
+
         preferences = getSharedPreferences("StudyActivity", 0);
         passwordGenerator = new PasswordGenerator(this);
+        setCaptureMotivation();
+
         binding = DataBindingUtil.setContentView(this, R.layout.study_activity);
         binding.setPassword(password);
         binding.setLastLogin(lastLogin);
+        binding.setIsCaptureMode(isCaptureMode);
+        binding.setCaptureCount(captureCount);
+        binding.setCaptureMotivation(captureMotivation);
 
-        binding.passwordInput.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+        binding.editTextPassword.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_NULL || actionId == EditorInfo.IME_ACTION_DONE) {
@@ -62,12 +79,37 @@ public class StudyActivity extends AppCompatActivity {
                 return false;
             }
         });
-        binding.loginAction.setOnClickListener(new View.OnClickListener() {
+        binding.imageButtonLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 processPasswordInput();
             }
         });
+        if (isCaptureMode.get()) {
+            binding.editTextPassword.setPrivateImeOptions(Constants.ImeOption.INTERNAL_BIOMETRICS_CLASSIFIER + "=CaptureClassifier");
+        }
+    }
+
+    private void setCaptureMotivation() {
+        if (isCaptureMode.get()) {
+            if (captureCount.get() == 0) {
+                captureMotivation.set(getResources().getString(R.string.study_capture_motivation_0));
+            } else if (captureCount.get() < 10) {
+                captureMotivation.set(getResources().getString(R.string.study_capture_motivation_1));
+            } else if (captureCount.get() < 30) {
+                captureMotivation.set(getResources().getString(R.string.study_capture_motivation_10));
+            } else if (captureCount.get() < 50) {
+                captureMotivation.set(getResources().getString(R.string.study_capture_motivation_30));
+            } else if (captureCount.get() < 70) {
+                captureMotivation.set(getResources().getString(R.string.study_capture_motivation_50));
+            } else if (captureCount.get() < 90) {
+                captureMotivation.set(getResources().getString(R.string.study_capture_motivation_70));
+            } else if (captureCount.get() < 100) {
+                captureMotivation.set(getResources().getString(R.string.study_capture_motivation_90));
+            } else {
+                captureMotivation.set(getResources().getString(R.string.study_capture_motivation_100));
+            }
+        }
     }
 
     @Override
@@ -86,6 +128,9 @@ public class StudyActivity extends AppCompatActivity {
         if (preferences.contains("lastLogin")) {
             lastLogin.set(preferences.getString("lastLogin", null));
         }
+        if (preferences.contains("captureCount")) {
+            captureCount.set(preferences.getInt("captureCount", 0));
+        }
     }
 
     @Override
@@ -102,6 +147,7 @@ public class StudyActivity extends AppCompatActivity {
     public void onSaveInstanceState(Bundle savedInstanceState) {
         savedInstanceState.putString("password", password.get());
         savedInstanceState.putString("lastLogin", lastLogin.get());
+        savedInstanceState.putInt("captureCount", captureCount.get());
 
         super.onSaveInstanceState(savedInstanceState);
     }
@@ -109,6 +155,7 @@ public class StudyActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         preferences.edit().putString("lastLogin", lastLogin.get()).apply();
+        preferences.edit().putInt("captureCount", captureCount.get()).apply();
         super.onStop();
     }
 
@@ -142,7 +189,7 @@ public class StudyActivity extends AppCompatActivity {
             }
         });
 
-        if (binding.passwordInput.getText().toString().equals(password.get())) {
+        if (binding.editTextPassword.getText().toString().equals(password.get())) {
             /*Intent confidenceIntent = new Intent(this, PhonyKeyboard.class);
             confidenceIntent.setAction(BiometricsManager.BROADCAST_ACTION_GET_SCORE);*/
             Intent scoreIntent = new Intent(BiometricsManager.BROADCAST_ACTION_GET_SCORE);
@@ -170,6 +217,11 @@ public class StudyActivity extends AppCompatActivity {
                             switch ((int)getResultExtras(false).getDouble(BiometricsManager.BROADCAST_EXTRA_SCORE)) {
                                 case (int)BiometricsManager.SCORE_NOT_ENOUGH_DATA:
                                     message.append(getResources().getString(R.string.study_passwordresult_correct_nodata));
+                                    if (isCaptureMode.get()) {
+                                        captureCount.set((int)getResultExtras(false).getLong(BiometricsManagerImpl.INTERNAL_BROADCAST_EXTRA_CAPTURE_COUNT, 0));
+                                        setCaptureMotivation();
+                                        lastLogin.set(SimpleDateFormat.getDateTimeInstance().format(new Date()));
+                                    }
                                     break;
                                 case (int)BiometricsManager.SCORE_CAPTURING_ERROR:
                                     message.append(getResources().getString(R.string.study_passwordresult_correct_failed));
@@ -195,10 +247,10 @@ public class StudyActivity extends AppCompatActivity {
             builder.show();
         }
 
-        binding.passwordInput.setText("");
-        binding.passwordInput.clearFocus();
+        binding.editTextPassword.setText("");
+        binding.editTextPassword.clearFocus();
         InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.hideSoftInputFromWindow(binding.passwordInput.getWindowToken(), 0);
+        imm.hideSoftInputFromWindow(binding.editTextPassword.getWindowToken(), 0);
     }
 
     private class GeneratePasswordTask extends AsyncTask<Void, Void, String> {
