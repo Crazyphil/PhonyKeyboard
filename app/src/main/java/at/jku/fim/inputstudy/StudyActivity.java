@@ -130,6 +130,7 @@ public class StudyActivity extends AppCompatActivity {
         }
         if (preferences.contains("captureCount")) {
             captureCount.set(preferences.getInt("captureCount", 0));
+            setCaptureMotivation();
         }
     }
 
