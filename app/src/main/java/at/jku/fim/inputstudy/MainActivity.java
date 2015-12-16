@@ -14,12 +14,22 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setTitle(R.string.main_title);
+
         super.onCreate(savedInstanceState);
         binding = DataBindingUtil.setContentView(this, R.layout.main_activity);
         binding.buttonStudyActivity.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(MainActivity.this, StudyActivity.class));
+            }
+        });
+        binding.buttonCaptureActivity.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, StudyActivity.class);
+                intent.setAction("capture");
+                startActivity(intent);
             }
         });
     }
