@@ -11,6 +11,7 @@ import android.databinding.DataBindingUtil;
 import android.databinding.ObservableBoolean;
 import android.databinding.ObservableField;
 import android.databinding.ObservableInt;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -21,17 +22,24 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 
+import at.jku.fim.SensitiveConstants;
 import at.jku.fim.phonykeyboard.latin.Constants;
 import at.jku.fim.phonykeyboard.latin.R;
 import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManager;
 import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManagerImpl;
+import at.jku.fim.phonykeyboard.latin.biometrics.data.BiometricsDbHelper;
 import at.jku.fim.phonykeyboard.latin.databinding.StudyActivityBinding;
 
 public class StudyActivity extends AppCompatActivity {
+    protected static final String PREFERENCES_NAME = "StudyActivity";
+
     private static final int PASSWORD_WORD_LENGTH = 4;
 
     private SharedPreferences preferences;
@@ -58,7 +66,7 @@ public class StudyActivity extends AppCompatActivity {
             captureCount.set(savedInstanceState.getInt("captureCount"));
         }
 
-        preferences = getSharedPreferences("StudyActivity", 0);
+        preferences = getSharedPreferences(PREFERENCES_NAME, 0);
         passwordGenerator = new PasswordGenerator(this);
         setCaptureMotivation();
 
@@ -114,8 +122,9 @@ public class StudyActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.study_menu, menu);
+        if (isCaptureMode.get()) {
+            menu.add(0, 0, 100, R.string.study_action_send_capture);
+        }
         return true;
     }
 
@@ -173,8 +182,18 @@ public class StudyActivity extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.study_action_settings) {
+        if (id == 0) {
+            Intent intent = new Intent(Intent.ACTION_SENDTO);
+            intent.setData(Uri.parse("mailto:")); // only email apps should handle this
+            intent.putExtra(Intent.EXTRA_EMAIL, SensitiveConstants.STUDY_CAPTURE_RECEPIENT_EMAIL);
+            intent.putExtra(Intent.EXTRA_SUBJECT, "Collected typing data");
+            intent.putExtra(Intent.EXTRA_TEXT, getResources().getString(R.string.study_capture_email_text) + "\n");
+            intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(getDatabasePath(BiometricsDbHelper.DATABASE_NAME)));
+            if (intent.resolveActivity(getPackageManager()) != null) {
+                startActivity(intent);
+            } else {
+                Toast.makeText(this, getResources().getText(R.string.study_action_send_capture_error), Toast.LENGTH_SHORT).show();
+            }
             return true;
         }
 
@@ -222,6 +241,12 @@ public class StudyActivity extends AppCompatActivity {
                                         captureCount.set((int)getResultExtras(false).getLong(BiometricsManagerImpl.INTERNAL_BROADCAST_EXTRA_CAPTURE_COUNT, 0));
                                         setCaptureMotivation();
                                         lastLogin.set(SimpleDateFormat.getDateTimeInstance().format(new Date()));
+
+                                        if (captureCount.get() > 0) {
+                                            Calendar nextCapture = GregorianCalendar.getInstance();
+                                            nextCapture.add(Calendar.MILLISECOND, CaptureReminderService.CAPTURE_REPEAT_MS);
+                                            CaptureReminderService.scheduleNotification(StudyActivity.this, nextCapture);
+                                        }
                                     }
                                     break;
                                 case (int)BiometricsManager.SCORE_CAPTURING_ERROR:

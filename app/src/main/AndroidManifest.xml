@@ -32,6 +32,7 @@
         android:icon="@mipmap/ic_launcher_keyboard"
         android:killAfterRestore="false"
         android:label="@string/english_ime_name"
+        android:name="at.jku.fim.inputstudy.PhonyKeyboardApplication"
         android:supportsRtl="true">
         <service
             android:name=".PhonyKeyboard"
@@ -125,6 +126,28 @@
                 <action android:name="at.jku.fim.phonykeyboard.dictionarypack.aosp.UPDATE_NOW"/>
             </intent-filter>
         </receiver>
+
+        <receiver
+            android:name="at.jku.fim.inputstudy.CaptureReminderService$CaptureReminderReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.USER_PRESENT"/>
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name="at.jku.fim.inputstudy.CaptureReminderService$CaptureNotificationReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="at.jku.fim.phonykeyboard.BIOMETRICS_CAPTURE_NOTIFICATION"/>
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name="at.jku.fim.inputstudy.CaptureReminderService"
+            android:label="@string/dictionary_service_name">
+        </service>
 
         <activity
             android:name="at.jku.fim.phonykeyboard.dictionarypack.DictionarySettingsActivity"
