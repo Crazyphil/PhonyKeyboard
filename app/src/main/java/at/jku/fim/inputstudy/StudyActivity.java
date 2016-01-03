@@ -184,7 +184,7 @@ public class StudyActivity extends AppCompatActivity {
 
         if (id == 0) {
             Intent intent = new Intent(Intent.ACTION_SENDTO);
-            intent.setData(Uri.parse("mailto:")); // only email apps should handle this
+            intent.setData(Uri.parse("mailto:" + SensitiveConstants.STUDY_CAPTURE_RECEPIENT_EMAIL)); // only email apps should handle this
             intent.putExtra(Intent.EXTRA_EMAIL, SensitiveConstants.STUDY_CAPTURE_RECEPIENT_EMAIL);
             intent.putExtra(Intent.EXTRA_SUBJECT, "Collected typing data");
             intent.putExtra(Intent.EXTRA_TEXT, getResources().getString(R.string.study_capture_email_text) + "\n");
@@ -251,6 +251,9 @@ public class StudyActivity extends AppCompatActivity {
                                     break;
                                 case (int)BiometricsManager.SCORE_CAPTURING_ERROR:
                                     message.append(getResources().getString(R.string.study_passwordresult_correct_failed));
+                                    break;
+                                case (int)BiometricsManager.SCORE_CAPTURING_DISABLED:
+                                    message.append(getResources().getString(R.string.study_passwordresult_correct_disabled));
                                     break;
                             }
                             break;

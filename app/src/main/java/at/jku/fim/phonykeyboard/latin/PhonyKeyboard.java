@@ -78,6 +78,7 @@ import at.jku.fim.phonykeyboard.latin.SuggestedWords.SuggestedWordInfo;
 import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsLogger;
 import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManager;
 import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManagerImpl;
+import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsPolicy;
 import at.jku.fim.phonykeyboard.latin.define.ProductionFlag;
 import at.jku.fim.phonykeyboard.latin.personalization.DictionaryDecayBroadcastReciever;
 import at.jku.fim.phonykeyboard.latin.personalization.PersonalizationDictionary;
@@ -850,7 +851,12 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
 
         LatinImeLogger.onStartInputView(editorInfo);
 
-        BiometricsManager.getInstance().onStartInputView(editorInfo, restarting);
+        if (!restarting) {
+            BiometricsPolicy.getInstance().setEditorInfo(this, editorInfo);
+        }
+        if (BiometricsPolicy.getInstance().isBiometricsAllowed()) {
+            BiometricsManager.getInstance().onStartInputView(editorInfo, restarting);
+        }
 
         // In landscape mode, this method gets called without the input view being created.
         if (mainKeyboardView == null) {
@@ -1059,7 +1065,9 @@ public class PhonyKeyboard extends InputMethodService implements KeyboardActionL
         if (mWordComposer.isComposingWord()) mConnection.finishComposingText();
         resetComposingState(true /* alsoResetLastComposedWord */);
 
-        BiometricsManager.getInstance().onFinishInputView(finishingInput);
+        if (BiometricsPolicy.getInstance().isBiometricsAllowed()) {
+            BiometricsManager.getInstance().onFinishInputView(finishingInput);
+        }
 
         // Notify ResearchLogger
         if (ProductionFlag.USES_DEVELOPMENT_ONLY_DIAGNOSTICS) {

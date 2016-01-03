@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -15,6 +16,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputBinding;
 
 import java.util.Dictionary;
 import java.util.Enumeration;
@@ -29,7 +31,7 @@ public abstract class BiometricsManager implements SensorEventListener {
     public static final String BROADCAST_ACTION_GET_SCORE = "at.jku.fim.phonykeyboard.BIOMETRICS_GET_SCORE";
     public static final String BROADCAST_EXTRA_SCORE = "at.jku.fim.phonykeyboard.BIOMETRICS_CONFIDENCE";
     public static final String BROADCAST_ACTION_CLEAR_DATA = "at.jku.fim.phonykeyboard.BIOMETRICS_CLEAR_DATA";
-    public static final double SCORE_NOT_ENOUGH_DATA = -1, SCORE_CAPTURING_ERROR = -2;
+    public static final double SCORE_NOT_ENOUGH_DATA = -1, SCORE_CAPTURING_ERROR = -2, SCORE_CAPTURING_DISABLED = -3;
 
     private static BiometricsManager instance;
 
@@ -169,8 +171,10 @@ public abstract class BiometricsManager implements SensorEventListener {
     }
 
     public String getVerifiedPackageName(EditorInfo editorInfo) {
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP_MR1) {
-            return getContext().getPackageManager().getNameForUid(((PhonyKeyboard)getContext()).getCurrentInputBinding().getUid());
+        InputBinding binding = ((PhonyKeyboard)getContext()).getCurrentInputBinding();
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP_MR1 && binding != null) {
+            PackageManager pm = getContext().getPackageManager();
+            return pm.getNameForUid(binding.getUid());
         } else {
             return editorInfo.packageName;    // Package name is system verified since Android M
         }
@@ -217,17 +221,25 @@ public abstract class BiometricsManager implements SensorEventListener {
         public void getScore() {
             if (!isOrderedBroadcast()) return;
 
-            double confidence = BiometricsManager.this.getScore();
             Bundle result = new Bundle(1);
+            double confidence;
+            if (BiometricsPolicy.getInstance().isBiometricsAllowed()) {
+                confidence = BiometricsManager.this.getScore();
+                BiometricsManager.this.addExtraScoreData(result);
+            } else {
+                confidence = SCORE_CAPTURING_DISABLED;
+            }
             result.putDouble(BROADCAST_EXTRA_SCORE, confidence);
-            BiometricsManager.this.addExtraScoreData(result);
 
-            setResultCode((confidence == SCORE_NOT_ENOUGH_DATA || confidence == SCORE_CAPTURING_ERROR) ? Activity.RESULT_CANCELED : Activity.RESULT_OK);
+            setResultCode((confidence <= SCORE_NOT_ENOUGH_DATA) ? Activity.RESULT_CANCELED : Activity.RESULT_OK);
             setResultExtras(result);
         }
 
         public void clearData() {
-            boolean result = BiometricsManager.this.clearData();
+            boolean result = true;
+            if (BiometricsPolicy.getInstance().isBiometricsAllowed()) {
+                result = BiometricsManager.this.clearData();
+            }
             setResultCode(result ? Activity.RESULT_OK : Activity.RESULT_CANCELED);
         }
     }

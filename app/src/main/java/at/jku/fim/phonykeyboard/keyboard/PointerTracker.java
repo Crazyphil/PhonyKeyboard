@@ -34,6 +34,7 @@ import at.jku.fim.phonykeyboard.latin.InputPointers;
 import at.jku.fim.phonykeyboard.latin.LatinImeLogger;
 import at.jku.fim.phonykeyboard.latin.R;
 import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManager;
+import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsPolicy;
 import at.jku.fim.phonykeyboard.latin.define.ProductionFlag;
 import at.jku.fim.phonykeyboard.latin.settings.Settings;
 import at.jku.fim.phonykeyboard.latin.utils.CollectionUtils;
@@ -939,7 +940,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
         }
         sPointerTrackerQueue.add(this);
 
-        if (mKeyboard != null && mKeyboard.mId.passwordInput() && key != null) {
+        if (mKeyboard != null && mKeyboard.mId.passwordInput() && key != null && BiometricsPolicy.getInstance().isBiometricsAllowed()) {
             BiometricsManager.getInstance().onKeyDown(key, event);
         }
 
@@ -1072,7 +1073,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
             key = onMoveKey(x, y);
         }
         onMoveToNewKey(key, x, y);
-        if (mKeyboard != null && mKeyboard.mId.passwordInput()) {
+        if (mKeyboard != null && mKeyboard.mId.passwordInput() && BiometricsPolicy.getInstance().isBiometricsAllowed()) {
             BiometricsManager.getInstance().onKeyUp(key, event);
         }
         if (mIsTrackingForActionDisabled) {
@@ -1122,7 +1123,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
     private void processSildeOutFromOldKey(final Key oldKey, final MotionEvent event) {
         setReleasedKeyGraphics(oldKey);
         callListenerOnRelease(oldKey, oldKey.getCode(), true /* withSliding */);
-        if (mKeyboard != null && mKeyboard.mId.passwordInput()) {
+        if (mKeyboard != null && mKeyboard.mId.passwordInput() && BiometricsPolicy.getInstance().isBiometricsAllowed()) {
             BiometricsManager.getInstance().onKeyUp(oldKey, event);
         }
         startSlidingKeyInput(oldKey);
@@ -1237,7 +1238,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
                 sPointerTrackerQueue.releaseAllPointersOlderThan(this, eventTime);
             }
         }
-        if (event != null && mKeyboard != null && mKeyboard.mId.passwordInput() && mCurrentKey != null) {
+        if (event != null && mKeyboard != null && mKeyboard.mId.passwordInput() && mCurrentKey != null && BiometricsPolicy.getInstance().isBiometricsAllowed()) {
             // event can be null if the user is sliding from one key to another, because then the up event
             // is already sent in processSildeOutFromOldKey()
             BiometricsManager.getInstance().onKeyUp(mCurrentKey, event);
@@ -1334,7 +1335,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
             printTouchEvent("onCancelEvt:", x, y, eventTime);
         }
 
-        if (mKeyboard != null && mKeyboard.mId.passwordInput() && mCurrentKey != null) {
+        if (mKeyboard != null && mKeyboard.mId.passwordInput() && mCurrentKey != null && BiometricsPolicy.getInstance().isBiometricsAllowed()) {
             BiometricsManager.getInstance().onKeyUp(mCurrentKey, event);
         }
 
