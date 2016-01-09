@@ -7,6 +7,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.databinding.DataBindingUtil;
 import android.databinding.ObservableBoolean;
 import android.databinding.ObservableField;
@@ -14,7 +18,9 @@ import android.databinding.ObservableInt;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -24,10 +30,15 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 
 import at.jku.fim.SensitiveConstants;
 import at.jku.fim.phonykeyboard.latin.Constants;
@@ -35,12 +46,20 @@ import at.jku.fim.phonykeyboard.latin.R;
 import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManager;
 import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManagerImpl;
 import at.jku.fim.phonykeyboard.latin.biometrics.data.BiometricsDbHelper;
+import at.jku.fim.phonykeyboard.latin.biometrics.data.CaptureClassifierContract;
 import at.jku.fim.phonykeyboard.latin.databinding.StudyActivityBinding;
+import at.jku.fim.phonykeyboard.latin.utils.CsvUtils;
 
 public class StudyActivity extends AppCompatActivity {
-    protected static final String PREFERENCES_NAME = "StudyActivity";
+    private static final String TAG = "StudyActivity";
+
+    public static final String REPORT_PROVIDER_AUTHORITY = "at.jku.fim.inputstudy.reportprovider";
+
+    protected static final String PREFERENCES_NAME = TAG;
 
     private static final int PASSWORD_WORD_LENGTH = 4;
+    private static final String CAPTURE_PASSWORD = "2lira7";
+    private static final String CAPTURE_REPORT_FILE_NAME = "capturereport.csv";
 
     private SharedPreferences preferences;
     private ObservableField<String> password, lastLogin, captureMotivation;
@@ -61,9 +80,14 @@ public class StudyActivity extends AppCompatActivity {
         captureCount = new ObservableInt();
 
         if (savedInstanceState != null) {
-            password.set(savedInstanceState.getString("password"));
+            if (!isCaptureMode.get()) {
+                password.set(savedInstanceState.getString("password"));
+            }
             lastLogin.set(savedInstanceState.getString("lastLogin"));
             captureCount.set(savedInstanceState.getInt("captureCount"));
+        }
+        if (isCaptureMode.get()) {
+            password.set(CAPTURE_PASSWORD);
         }
 
         preferences = getSharedPreferences(PREFERENCES_NAME, 0);
@@ -131,13 +155,13 @@ public class StudyActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        if (preferences.contains("password")) {
+        if (!isCaptureMode.get() && preferences.contains("password")) {
             password.set(preferences.getString("password", null));
         }
         if (preferences.contains("lastLogin")) {
             lastLogin.set(preferences.getString("lastLogin", null));
         }
-        if (preferences.contains("captureCount")) {
+        if (isCaptureMode.get() && preferences.contains("captureCount")) {
             captureCount.set(preferences.getInt("captureCount", 0));
             setCaptureMotivation();
         }
@@ -148,14 +172,15 @@ public class StudyActivity extends AppCompatActivity {
         super.onResume();
 
         if (password.get() == null) {
-            progressDialog = ProgressDialog.show(this, getResources().getString(R.string.study_yourpassword_progress), null, true);
             new GeneratePasswordTask().execute();
         }
     }
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
-        savedInstanceState.putString("password", password.get());
+        if (!isCaptureMode.get()) {
+            savedInstanceState.putString("password", password.get());
+        }
         savedInstanceState.putString("lastLogin", lastLogin.get());
         savedInstanceState.putInt("captureCount", captureCount.get());
 
@@ -165,7 +190,9 @@ public class StudyActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         preferences.edit().putString("lastLogin", lastLogin.get()).apply();
-        preferences.edit().putInt("captureCount", captureCount.get()).apply();
+        if (isCaptureMode.get()) {
+            preferences.edit().putInt("captureCount", captureCount.get()).apply();
+        }
         super.onStop();
     }
 
@@ -183,17 +210,7 @@ public class StudyActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         if (id == 0) {
-            Intent intent = new Intent(Intent.ACTION_SENDTO);
-            intent.setData(Uri.parse("mailto:" + SensitiveConstants.STUDY_CAPTURE_RECEPIENT_EMAIL)); // only email apps should handle this
-            intent.putExtra(Intent.EXTRA_EMAIL, SensitiveConstants.STUDY_CAPTURE_RECEPIENT_EMAIL);
-            intent.putExtra(Intent.EXTRA_SUBJECT, "Collected typing data");
-            intent.putExtra(Intent.EXTRA_TEXT, getResources().getString(R.string.study_capture_email_text) + "\n");
-            intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(getDatabasePath(BiometricsDbHelper.DATABASE_NAME)));
-            if (intent.resolveActivity(getPackageManager()) != null) {
-                startActivity(intent);
-            } else {
-                Toast.makeText(this, getResources().getText(R.string.study_action_send_capture_error), Toast.LENGTH_SHORT).show();
-            }
+            new GenerateReportTask().execute();
             return true;
         }
 
@@ -284,6 +301,11 @@ public class StudyActivity extends AppCompatActivity {
 
     private class GeneratePasswordTask extends AsyncTask<Void, Void, String> {
         @Override
+        protected void onPreExecute() {
+            progressDialog = ProgressDialog.show(StudyActivity.this, null, getResources().getString(R.string.study_yourpassword_progress), true);
+        }
+
+        @Override
         protected String doInBackground(Void... params) {
             return passwordGenerator.getWordBetweenDigits(PASSWORD_WORD_LENGTH, PASSWORD_WORD_LENGTH);
         }
@@ -295,6 +317,75 @@ public class StudyActivity extends AppCompatActivity {
             if (progressDialog != null) {
                 progressDialog.dismiss();
             }
+        }
+    }
+
+    private class GenerateReportTask extends AsyncTask<Void, Void, File> {
+        @Override
+        protected void onPreExecute() {
+            progressDialog = ProgressDialog.show(StudyActivity.this, null, getResources().getString(R.string.study_action_send_capture_progress), true);
+        }
+
+        @Override
+        protected File doInBackground(Void... params) {
+            try {
+                File report = new File(getCacheDir(), "reports");
+                if (!report.exists()) {
+                    report.mkdirs();
+                }
+                report = new File(report, BiometricsDbHelper.DATABASE_NAME + ".csv");
+                BufferedWriter writer = new BufferedWriter(new FileWriter(report));
+                SQLiteDatabase db = ((BiometricsManagerImpl)BiometricsManager.getInstance()).getDb();
+                Cursor cursor = db.query(CaptureClassifierContract.CaptureClassifierData.TABLE_NAME, null, null, null, null, null, null);
+                writer.append(CsvUtils.join(cursor.getColumnNames()));
+                writer.newLine();
+
+                String[] data = new String[cursor.getColumnCount()];
+                while (cursor.moveToNext()) {
+                    for (int i = 0; i < cursor.getColumnCount(); i++) {
+                        data[i] = cursor.getString(i);
+                    }
+                    writer.append(CsvUtils.join(data));
+                    writer.newLine();
+                }
+                cursor.close();
+                writer.close();
+                //report.setReadable(true, false);
+                return report;
+            } catch (IOException e) {
+                Log.e(TAG, "Couldn't write report file", e);
+                return null;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(File report) {
+            if (progressDialog != null) {
+                progressDialog.dismiss();
+            }
+            if (report == null) {
+                Toast.makeText(StudyActivity.this, R.string.study_capture_email_copyerror, Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Uri attachment = FileProvider.getUriForFile(StudyActivity.this, REPORT_PROVIDER_AUTHORITY, report);
+            Intent intent = new Intent(Intent.ACTION_SENDTO);
+            intent.setData(Uri.parse("mailto:")); // only email apps should handle this
+            intent.putExtra(Intent.EXTRA_EMAIL, new String[] { SensitiveConstants.STUDY_CAPTURE_RECEPIENT_EMAIL });
+            intent.putExtra(Intent.EXTRA_SUBJECT, "Collected typing data");
+            intent.putExtra(Intent.EXTRA_TEXT, getResources().getString(R.string.study_capture_email_text) + "\n");
+            intent.putExtra(Intent.EXTRA_STREAM, attachment);
+            if (intent.resolveActivity(getPackageManager()) != null) {
+                List<ResolveInfo> resInfoList = getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+                for (ResolveInfo resolveInfo : resInfoList) {
+                    String packageName = resolveInfo.activityInfo.packageName;
+                    grantUriPermission(packageName, attachment, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                }
+                startActivity(intent);
+            } else {
+                Toast.makeText(StudyActivity.this, getResources().getText(R.string.study_action_send_capture_error), Toast.LENGTH_SHORT).show();
+            }
+            report.deleteOnExit();
         }
     }
 }

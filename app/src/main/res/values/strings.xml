@@ -698,6 +698,7 @@ Tip: You can download and remove dictionaries by going to &lt;b>Language &amp; i
     <!-- Strings shown in the input study activity -->
     <string name="study_title">Input Study</string>
     <string name="study_action_send_capture">Send Results</string>
+    <string name="study_action_send_capture_progress">Generating report…</string>
     <string name="study_action_send_capture_error">Please install an E-Mail app to send your results.</string>
     <string name="study_lastlogin_title">Your last successful login was</string>
     <string name="study_lastlogin_text">never</string>
@@ -712,6 +713,7 @@ Tip: You can download and remove dictionaries by going to &lt;b>Language &amp; i
     <string name="study_capture_notification_title">Capture password data</string>
     <string name="study_capture_notification_text">Got a moment? Please enter your study password now.</string>
     <string name="study_capture_email_text">In which situations did you input your password?</string>
+    <string name="study_capture_email_copyerror">Couldn\'t prepare report.</string>
     <string name="study_yourpassword_title">Your password is:</string>
     <string name="study_yourpassword_action">Please enter your password below to login.</string>
     <string name="study_yourpassword_progress">Generating your password…</string>
