@@ -72,7 +72,7 @@ public final class SetupActivity extends Activity {
      * @param imm the {@link InputMethodManager}.
      * @return true if this IME is the current IME.
      */
-    /* package */ static boolean isThisImeCurrent(final Context context,
+    public static boolean isThisImeCurrent(final Context context,
             final InputMethodManager imm) {
         final InputMethodInfo imi = getInputMethodInfoOf(context.getPackageName(), imm);
         final String currentImeId = Settings.Secure.getString(

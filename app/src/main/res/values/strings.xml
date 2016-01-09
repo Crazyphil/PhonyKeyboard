@@ -700,6 +700,7 @@ Tip: You can download and remove dictionaries by going to &lt;b>Language &amp; i
     <string name="study_action_send_capture">Send Results</string>
     <string name="study_action_send_capture_progress">Generating report…</string>
     <string name="study_action_send_capture_error">Please install an E-Mail app to send your results.</string>
+    <string name="study_keyboard_change">Select PhonyKeyboard to use this app.</string>
     <string name="study_lastlogin_title">Your last successful login was</string>
     <string name="study_lastlogin_text">never</string>
     <string name="study_capture_motivation_0">Start by entering your password.</string>

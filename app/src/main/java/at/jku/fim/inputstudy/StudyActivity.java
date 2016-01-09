@@ -48,6 +48,7 @@ import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManagerImpl;
 import at.jku.fim.phonykeyboard.latin.biometrics.data.BiometricsDbHelper;
 import at.jku.fim.phonykeyboard.latin.biometrics.data.CaptureClassifierContract;
 import at.jku.fim.phonykeyboard.latin.databinding.StudyActivityBinding;
+import at.jku.fim.phonykeyboard.latin.setup.SetupActivity;
 import at.jku.fim.phonykeyboard.latin.utils.CsvUtils;
 
 public class StudyActivity extends AppCompatActivity {
@@ -69,6 +70,7 @@ public class StudyActivity extends AppCompatActivity {
 
     private ProgressDialog progressDialog;
     private StudyActivityBinding binding;
+    private InputMethodManager imm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,7 +121,18 @@ public class StudyActivity extends AppCompatActivity {
         });
         if (isCaptureMode.get()) {
             binding.editTextPassword.setPrivateImeOptions(Constants.ImeOption.INTERNAL_BIOMETRICS_CLASSIFIER + "=CaptureClassifier");
+            binding.editTextPassword.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                @Override
+                public void onFocusChange(View v, boolean hasFocus) {
+                    if (hasFocus && !SetupActivity.isThisImeCurrent(StudyActivity.this, imm)) {
+                        imm.showInputMethodPicker();
+                        Toast.makeText(StudyActivity.this, R.string.study_keyboard_change, Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
         }
+
+        imm = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
     }
 
     private void setCaptureMotivation() {
