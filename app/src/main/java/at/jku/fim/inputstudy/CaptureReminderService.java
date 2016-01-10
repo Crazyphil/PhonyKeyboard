@@ -25,8 +25,7 @@ import at.jku.fim.phonykeyboard.latin.R;
 
 public class CaptureReminderService extends IntentService {
     public static final String BROADCAST_ACTION_CAPTURE_NOTIFICATION = "at.jku.fim.phonykeyboard.BIOMETRICS_CAPTURE_NOTIFICATION";
-    //public static final int CAPTURE_REPEAT_MS = 6 * 60 * 60 * 1000;
-    public static final int CAPTURE_REPEAT_MS = 20 * 1000;
+    public static final int CAPTURE_REPEAT_MS = 6 * 60 * 60 * 1000;
 
     private static final String TAG = "CaptureReminderService";
     private static final int MIN_NOTIFICATION_HOUR = 7;
