@@ -25,7 +25,7 @@ import at.jku.fim.phonykeyboard.latin.R;
 
 public class CaptureReminderService extends IntentService {
     public static final String BROADCAST_ACTION_CAPTURE_NOTIFICATION = "at.jku.fim.phonykeyboard.BIOMETRICS_CAPTURE_NOTIFICATION";
-    public static final int CAPTURE_REPEAT_MS = 6 * 60 * 60 * 1000;
+    public static final int CAPTURE_REPEAT_MS = 5 * 60 * 60 * 1000;
 
     private static final String TAG = "CaptureReminderService";
     private static final int MIN_NOTIFICATION_HOUR = 7;
@@ -125,8 +125,9 @@ public class CaptureReminderService extends IntentService {
     }
 
     public static void scheduleNotification(Context context, Calendar time) {
-        if (time.get(Calendar.HOUR_OF_DAY) < MIN_NOTIFICATION_HOUR) {
-            time.set(Calendar.HOUR_OF_DAY, MIN_NOTIFICATION_HOUR);
+        int notificationHour = time.get(Calendar.HOUR_OF_DAY);
+        if (notificationHour < MIN_NOTIFICATION_HOUR) {
+            time.set(Calendar.HOUR_OF_DAY, MIN_NOTIFICATION_HOUR + notificationHour);
         }
 
         if (!isScreenOnRegistered) {
@@ -142,6 +143,7 @@ public class CaptureReminderService extends IntentService {
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
         manager.set(AlarmManager.RTC, time.getTimeInMillis(), pendingIntent);
         nextNotification = time;
+        Log.i(TAG, String.format("Scheduling next notification for %1$tF %1$tT", time.getTime()));
     }
 
     public static void cancelNotification(Context context) {
@@ -155,6 +157,7 @@ public class CaptureReminderService extends IntentService {
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
         manager.cancel(pendingIntent);
         nextNotification = null;
+        Log.i(TAG, "Cancelling next notification");
     }
 
     public static class CaptureReminderReceiver extends BroadcastReceiver {
