@@ -109,7 +109,8 @@ public class CaptureClassifier extends Classifier {
     public void onKeyEvent(BiometricsEntry entry) {
         if (submittedInput) return;
         if (invalidData) {
-            if (manager.getInputText().length() == 0) {
+            CharSequence text = manager.getInputText();
+            if (text == null || text.length() == 0) {
                 resetData();
             } else {
                 return;
