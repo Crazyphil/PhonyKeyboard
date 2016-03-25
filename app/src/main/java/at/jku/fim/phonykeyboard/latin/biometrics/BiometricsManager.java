@@ -56,7 +56,7 @@ public abstract class BiometricsManager implements SensorEventListener {
         instance = this;
 
         sensorManager = (SensorManager)keyboard.getSystemService(Context.SENSOR_SERVICE);
-        for (int sensorType : sensorTypes){
+        for (int sensorType : sensorTypes) {
             if (sensorManager.getDefaultSensor(sensorType) != null) {
                 sensors.put(sensorManager.getDefaultSensor(sensorType), EMPTY_SENSOR_DATA);
             }

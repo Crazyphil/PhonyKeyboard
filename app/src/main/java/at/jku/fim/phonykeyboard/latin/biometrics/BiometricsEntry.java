@@ -5,6 +5,7 @@ import android.view.MotionEvent;
 import junit.framework.Assert;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import at.jku.fim.phonykeyboard.keyboard.Key;
@@ -47,7 +48,7 @@ public class BiometricsEntry {
     }
 
     public void addSensorData(float[] data) {
-        sensorData.add(data);
+        sensorData.add(Arrays.copyOf(data, data.length));
     }
 
     public int getPointerId() {
