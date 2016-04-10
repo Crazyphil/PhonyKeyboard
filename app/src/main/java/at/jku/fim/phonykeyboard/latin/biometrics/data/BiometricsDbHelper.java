@@ -113,7 +113,10 @@ public class BiometricsDbHelper extends SQLiteOpenHelper {
                 createContractTables(getWritableDatabase(), contract, null);
             } else {
                 c.moveToFirst();
-                upgradeContractTables(getWritableDatabase(), contract, c.getInt(c.getColumnIndex(BiometricsContract.ContractVersions.COLUMN_CONTRACT)), null);
+                int version = c.getInt(c.getColumnIndex(BiometricsContract.ContractVersions.COLUMN_VERSION));
+                if (contract.getVersion() > version) {
+                    upgradeContractTables(getWritableDatabase(), contract, version, null);
+                }
             }
             c.close();
         }
