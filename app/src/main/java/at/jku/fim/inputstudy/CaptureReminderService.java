@@ -26,6 +26,7 @@ import at.jku.fim.phonykeyboard.latin.R;
 public class CaptureReminderService extends IntentService {
     public static final String BROADCAST_ACTION_CAPTURE_NOTIFICATION = "at.jku.fim.phonykeyboard.BIOMETRICS_CAPTURE_NOTIFICATION";
     public static final int CAPTURE_REPEAT_MS = 5 * 60 * 60 * 1000;
+    public static final int CAPTURE_MAX_COUNT = 100;
 
     private static final String TAG = "CaptureReminderService";
     private static final int MIN_NOTIFICATION_HOUR = 7;
@@ -75,7 +76,8 @@ public class CaptureReminderService extends IntentService {
                 if (nextNotification == null) {
                     SharedPreferences preferences = getSharedPreferences(StudyActivity.PREFERENCES_NAME, 0);
                     Calendar lastLogin = getLastLogin();
-                    if (preferences.getInt("captureCount", 0) > 0 && lastLogin != null) {
+                    int captureCount = preferences.getInt("captureCount", 0);
+                    if (captureCount > 0 && captureCount < CAPTURE_MAX_COUNT && lastLogin != null) {
                         lastLogin.add(Calendar.MILLISECOND, CAPTURE_REPEAT_MS);
                         if (lastLogin.before(notificationWindow)) {
                             nextNotification = GregorianCalendar.getInstance();
@@ -97,7 +99,8 @@ public class CaptureReminderService extends IntentService {
                 break;
             default:
                 SharedPreferences preferences = getSharedPreferences(StudyActivity.PREFERENCES_NAME, 0);
-                if (preferences.getInt("captureCount", 0) > 0) {
+                int captureCount = preferences.getInt("captureCount", 0);
+                if (captureCount > 0 && captureCount < CAPTURE_MAX_COUNT) {
                     Calendar lastLogin = getLastLogin();
                     Calendar now = GregorianCalendar.getInstance();
                     if (lastLogin != null) {
@@ -196,8 +199,8 @@ public class CaptureReminderService extends IntentService {
 
             SharedPreferences preferences = context.getSharedPreferences(StudyActivity.PREFERENCES_NAME, 0);
             int captureCount = preferences.getInt("captureCount", 0);
-            if (captureCount > 0 && captureCount < 100) {
-                builder.setProgress(100, captureCount, false);
+            if (captureCount > 0 && captureCount < CAPTURE_MAX_COUNT) {
+                builder.setProgress(CAPTURE_MAX_COUNT, captureCount, false);
             } else {
                 builder.setProgress(0, 0, false);
             }
