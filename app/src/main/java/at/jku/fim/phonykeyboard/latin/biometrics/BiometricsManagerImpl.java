@@ -1,6 +1,7 @@
 package at.jku.fim.phonykeyboard.latin.biometrics;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteDoneException;
@@ -126,6 +127,20 @@ public class BiometricsManagerImpl extends BiometricsManager {
     @Override
     public boolean clearData() {
         return classifier.clearData();
+    }
+
+    public void setOnUserDataGatheredListener(CaptureClassifier.OnUserDataGatheredListener listener) {
+        if (classifier instanceof CaptureClassifier) {
+            ((CaptureClassifier)classifier).setOnUserDataGatheredListener(listener);
+        }
+    }
+
+    public void gatherUserData(Context context) {
+        if (classifier instanceof CaptureClassifier) {
+            ((CaptureClassifier)classifier).gatherUserData(context);
+        } else {
+            throw new UnsupportedOperationException("Gathering user data is only supported by Capture Classifier");
+        }
     }
 
     public SQLiteDatabase getDb() {

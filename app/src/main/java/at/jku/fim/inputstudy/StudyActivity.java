@@ -45,6 +45,7 @@ import at.jku.fim.phonykeyboard.latin.Constants;
 import at.jku.fim.phonykeyboard.latin.R;
 import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManager;
 import at.jku.fim.phonykeyboard.latin.biometrics.BiometricsManagerImpl;
+import at.jku.fim.phonykeyboard.latin.biometrics.classifiers.CaptureClassifier;
 import at.jku.fim.phonykeyboard.latin.biometrics.data.BiometricsDbHelper;
 import at.jku.fim.phonykeyboard.latin.biometrics.data.CaptureClassifierContract;
 import at.jku.fim.phonykeyboard.latin.databinding.StudyActivityBinding;
@@ -60,7 +61,6 @@ public class StudyActivity extends AppCompatActivity {
 
     private static final int PASSWORD_WORD_LENGTH = 4;
     private static final String CAPTURE_PASSWORD = "2lira7";
-    private static final String CAPTURE_REPORT_FILE_NAME = "capturereport.csv";
 
     private SharedPreferences preferences;
     private ObservableField<String> password, lastLogin, captureMotivation;
@@ -107,7 +107,7 @@ public class StudyActivity extends AppCompatActivity {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_NULL || actionId == EditorInfo.IME_ACTION_DONE) {
-                    processPasswordInput();
+                    onPasswordFinished();
                     return true;
                 }
                 return false;
@@ -116,7 +116,7 @@ public class StudyActivity extends AppCompatActivity {
         binding.imageButtonLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                processPasswordInput();
+                onPasswordFinished();
             }
         });
         if (isCaptureMode.get()) {
@@ -133,6 +133,20 @@ public class StudyActivity extends AppCompatActivity {
         }
 
         imm = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
+    }
+
+    private void onPasswordFinished() {
+        if (isCaptureMode.get()) {
+            ((BiometricsManagerImpl)BiometricsManager.getInstance()).setOnUserDataGatheredListener(new CaptureClassifier.OnUserDataGatheredListener() {
+                @Override
+                public void onUserDataCollected() {
+                    processPasswordInput();
+                }
+            });
+            ((BiometricsManagerImpl)BiometricsManager.getInstance()).gatherUserData(this);
+        } else {
+            processPasswordInput();
+        }
     }
 
     private void setCaptureMotivation() {

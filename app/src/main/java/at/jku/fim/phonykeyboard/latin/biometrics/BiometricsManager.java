@@ -201,7 +201,7 @@ public abstract class BiometricsManager implements SensorEventListener {
         // TODO: Add score thresholds for low/medium/high security
     }
 
-    protected Context getContext() {
+    public Context getContext() {
         return keyboard;
     }
 

@@ -713,6 +713,23 @@ Tip: You can download and remove dictionaries by going to &lt;b>Language &amp; i
     <string name="study_capture_motivation_100">You did it!</string>
     <string name="study_capture_notification_title">Capture password data</string>
     <string name="study_capture_notification_text">Got a moment? Please enter your study password now.</string>
+    <string name="study_capture_userinfo_hand_title">Holding hand | Typing finger</string>
+    <string-array name="study_capture_userinfo_hand_choices">
+        <item>Right | Thumb</item>
+        <item>Left | Thumb </item>
+        <item>Both | Thumbs</item>
+        <item>Right | Left-hand Finger</item>
+        <item>Left | Right-hand Finger</item>
+        <item>Something else</item>
+    </string-array>
+    <string name="study_capture_userinfo_situation_title">Situation</string>
+    <string-array name="study_capture_userinfo_situation_choices">
+        <item>Sitting</item>
+        <item>Standing</item>
+        <item>Lying</item>
+        <item>Walking</item>
+        <item>Moving</item>
+    </string-array>
     <string name="study_capture_email_text">In which situations did you input your password?</string>
     <string name="study_capture_email_copyerror">Couldn\'t prepare report.</string>
     <string name="study_yourpassword_title">Your password is:</string>
