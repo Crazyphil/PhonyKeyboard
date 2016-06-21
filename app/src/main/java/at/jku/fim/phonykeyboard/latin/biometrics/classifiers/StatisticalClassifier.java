@@ -271,6 +271,7 @@ public class StatisticalClassifier extends Classifier {
         for (int i = 0; i < acquisitions.size(); i++) {
             double distance = 0;
             for (int row = 0; row < acquisitions.get(i).length; row++) {
+                if (row == i) continue;
                 if (currentData.get(i).size() != acquisitions.get(i)[row].length) {
                     Log.e(TAG, "Authentication data has " + currentData.get(i).size() + " samples, needs " + acquisitions.get(i)[row].length);
                     score = BiometricsManager.SCORE_CAPTURING_ERROR;
