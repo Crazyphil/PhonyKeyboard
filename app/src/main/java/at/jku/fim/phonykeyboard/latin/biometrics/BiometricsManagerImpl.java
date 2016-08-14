@@ -29,6 +29,7 @@ public class BiometricsManagerImpl extends BiometricsManager {
     private SQLiteDatabase db;
     private long currentBiometricsContext;
     private boolean hasCustomClassifier;
+    private double cachedScore = 0;
 
     @Override
     public void init(PhonyKeyboard context) {
@@ -111,8 +112,14 @@ public class BiometricsManagerImpl extends BiometricsManager {
     }
 
     @Override
-    public double getScore() {
-        return classifier.getScore();
+    public double getScore(double laxness) {
+        cachedScore = classifier.getScore(laxness);
+        return cachedScore;
+    }
+
+    @Override
+    public double getLastScore() {
+        return cachedScore;
     }
 
     @Override

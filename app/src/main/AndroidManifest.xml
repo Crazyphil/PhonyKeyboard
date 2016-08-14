@@ -15,7 +15,8 @@
      limitations under the License.
 -->
 <manifest package="at.jku.fim.phonykeyboard.latin"
-          xmlns:android="http://schemas.android.com/apk/res/android">
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION"/>
@@ -29,8 +30,11 @@
     <uses-permission android:name="android.permission.WRITE_USER_DICTIONARY"/>
     <!-- For ACRA reports -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- For CORMORANT integration -->
+    <uses-permission android:name="at.usmile.cormorant.REGISTER_AUTH_PLUGIN" />
 
     <application
+        tools:replace="android:label"
         android:icon="@mipmap/ic_launcher_keyboard"
         android:killAfterRestore="false"
         android:label="@string/english_ime_name"
@@ -149,6 +153,29 @@
         <service
             android:name="at.jku.fim.inputstudy.CaptureReminderService"
             android:label="@string/dictionary_service_name">
+        </service>
+
+        <!-- CORMORANT authentication service -->
+        <service
+            android:name=".biometrics.CormorantAuthenticationService"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="at.usmile.cormorant.permission.READ_PLUGIN_DATA">
+            <meta-data
+                android:name="apiVersion"
+                android:value="1" />
+            <meta-data
+                android:name="pluginType"
+                android:value="confidence" />
+            <meta-data
+                android:name="title"
+                android:value="@string/english_ime_name" />
+            <meta-data
+                android:name="description"
+                android:value="Sensor-enhanced keystroke dynamics authentication" />
+            <meta-data
+                android:name="implicit"
+                android:value="true" />
         </service>
 
         <activity

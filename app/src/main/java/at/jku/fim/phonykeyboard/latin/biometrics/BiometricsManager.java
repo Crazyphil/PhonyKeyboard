@@ -2,9 +2,11 @@ package at.jku.fim.phonykeyboard.latin.biometrics;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -12,6 +14,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.WindowManager;
@@ -24,12 +27,14 @@ import java.util.Hashtable;
 
 import at.jku.fim.phonykeyboard.keyboard.Key;
 import at.jku.fim.phonykeyboard.latin.PhonyKeyboard;
+import at.usmile.cormorant.api.AbstractConfidenceService;
 
 public abstract class BiometricsManager implements SensorEventListener {
     private static final String TAG = "BiometricsManager";
 
     public static final String BROADCAST_ACTION_GET_SCORE = "at.jku.fim.phonykeyboard.BIOMETRICS_GET_SCORE";
-    public static final String BROADCAST_EXTRA_SCORE = "at.jku.fim.phonykeyboard.BIOMETRICS_CONFIDENCE";
+    public static final String BROADCAST_EXTRA_LAXNESS = "at.jku.fim.phonykeyboard.BIOMETRICS_LAXNESS";
+    public static final String BROADCAST_EXTRA_RESULT = "at.jku.fim.phonykeyboard.BIOMETRICS_RESULT";
     public static final String BROADCAST_ACTION_CLEAR_DATA = "at.jku.fim.phonykeyboard.BIOMETRICS_CLEAR_DATA";
     public static final double SCORE_NOT_ENOUGH_DATA = -1, SCORE_CAPTURING_ERROR = -2, SCORE_CAPTURING_DISABLED = -3;
 
@@ -40,6 +45,7 @@ public abstract class BiometricsManager implements SensorEventListener {
     private final int[] sensorTypes;
     private Dictionary<Sensor, float[]> sensors = new Hashtable<>();
     private BiometricsReceiver receiver;
+    private CormorantAuthenticationService cormorantService;
 
     protected static final float[] EMPTY_SENSOR_DATA = new float[0];
 
@@ -95,9 +101,13 @@ public abstract class BiometricsManager implements SensorEventListener {
         filter.addAction(BROADCAST_ACTION_CLEAR_DATA);
         filter.setPriority(1);
         keyboard.registerReceiver(receiver, filter);
+
+        Intent intent = new Intent(keyboard, CormorantAuthenticationService.class);
+        keyboard.bindService(intent, cormorantConnection, Context.BIND_AUTO_CREATE);
     }
 
     public void onDestroy() {
+        keyboard.unbindService(cormorantConnection);
         sensorManager.unregisterListener(this);
 
         keyboard.unregisterReceiver(receiver);
@@ -110,7 +120,8 @@ public abstract class BiometricsManager implements SensorEventListener {
     public abstract void onKeyDown(final Key key, final MotionEvent event);
     public abstract void onKeyUp(final Key key, final MotionEvent event);
 
-    public abstract double getScore();
+    public abstract double getScore(double laxness);
+    public abstract double getLastScore();
     public abstract boolean clearData();
 
     public String getSensorType(Sensor sensor) {
@@ -197,9 +208,7 @@ public abstract class BiometricsManager implements SensorEventListener {
         return entry;
     }
 
-    protected void addExtraScoreData(Bundle result) {
-        // TODO: Add score thresholds for low/medium/high security
-    }
+    protected void addExtraScoreData(Bundle result) { }
 
     public Context getContext() {
         return keyboard;
@@ -210,7 +219,8 @@ public abstract class BiometricsManager implements SensorEventListener {
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
                 case BROADCAST_ACTION_GET_SCORE:
-                    getScore();
+                    double securityLevel = intent.getDoubleExtra(BROADCAST_EXTRA_LAXNESS, 0.5);
+                    getScore(securityLevel);
                     break;
                 case BROADCAST_ACTION_CLEAR_DATA:
                     clearData();
@@ -218,21 +228,25 @@ public abstract class BiometricsManager implements SensorEventListener {
             }
         }
 
-        public void getScore() {
+        public void getScore(double laxness) {
             if (!isOrderedBroadcast()) return;
 
             Bundle result = new Bundle(1);
-            double confidence;
+            double score;
             if (BiometricsPolicy.getInstance().isBiometricsAllowed()) {
-                confidence = BiometricsManager.this.getScore();
+                score = BiometricsManager.this.getScore(laxness);
                 BiometricsManager.this.addExtraScoreData(result);
             } else {
-                confidence = SCORE_CAPTURING_DISABLED;
+                score = SCORE_CAPTURING_DISABLED;
             }
-            result.putDouble(BROADCAST_EXTRA_SCORE, confidence);
+            result.putInt(BROADCAST_EXTRA_RESULT, score > 0 ? 1 : (int)score);
 
-            setResultCode((confidence <= SCORE_NOT_ENOUGH_DATA) ? Activity.RESULT_CANCELED : Activity.RESULT_OK);
+            setResultCode((score <= SCORE_NOT_ENOUGH_DATA) ? Activity.RESULT_CANCELED : Activity.RESULT_OK);
             setResultExtras(result);
+
+            if (cormorantService != null) {
+                cormorantService.publishConfidenceUpdate(score);
+            }
         }
 
         public void clearData() {
@@ -243,4 +257,19 @@ public abstract class BiometricsManager implements SensorEventListener {
             setResultCode(result ? Activity.RESULT_OK : Activity.RESULT_CANCELED);
         }
     }
+
+
+    public ServiceConnection cormorantConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            AbstractConfidenceService.ConfidencePluginServiceBinder binder = (AbstractConfidenceService.ConfidencePluginServiceBinder)service;
+            cormorantService = (CormorantAuthenticationService)binder.getService();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            cormorantService = null;
+        }
+    };
 }

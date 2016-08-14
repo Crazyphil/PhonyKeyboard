@@ -24,7 +24,7 @@ public abstract class Classifier {
         return null;
     }
 
-    public double getScore() {
+    public double getScore(double laxness) {
         return BiometricsManager.SCORE_NOT_ENOUGH_DATA;
     }
 

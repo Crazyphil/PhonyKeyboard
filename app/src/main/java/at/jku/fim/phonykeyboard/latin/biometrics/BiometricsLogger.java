@@ -56,7 +56,12 @@ public class BiometricsLogger extends BiometricsManager implements SensorEventLi
     }
 
     @Override
-    public double getScore() {
+    public double getScore(double laxness) {
+        return SCORE_NOT_ENOUGH_DATA;
+    }
+
+    @Override
+    public double getLastScore() {
         return SCORE_NOT_ENOUGH_DATA;
     }
 

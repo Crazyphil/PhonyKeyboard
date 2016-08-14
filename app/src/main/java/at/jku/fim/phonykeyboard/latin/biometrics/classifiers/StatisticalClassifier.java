@@ -65,13 +65,22 @@ public class StatisticalClassifier extends Classifier {
     }
 
     @Override
-    public double getScore() {
+    public double getScore(double laxness) {
+        double finalScore = score;
         if (!calculatedScore) {
             calcScore();
-            saveBiometricData();
+            // TODO: insert ROC data for security level calculation
+            if (true) {
+                finalScore = score;
+                saveBiometricData();
+            } else if (score < 0) {
+                finalScore = score;
+            } else {
+                finalScore = 0;
+            }
             resetData();
         }
-        return score;
+        return finalScore;
     }
 
     @Override

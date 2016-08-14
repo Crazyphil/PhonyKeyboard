@@ -254,9 +254,9 @@ public class StudyActivity extends AppCompatActivity {
         });
 
         if (binding.editTextPassword.getText().toString().equals(password.get())) {
-            /*Intent confidenceIntent = new Intent(this, PhonyKeyboard.class);
-            confidenceIntent.setAction(BiometricsManager.BROADCAST_ACTION_GET_SCORE);*/
             Intent scoreIntent = new Intent(BiometricsManager.BROADCAST_ACTION_GET_SCORE);
+            scoreIntent.setPackage("at.jku.fim.phonykeyboard");
+            scoreIntent.putExtra(BiometricsManager.BROADCAST_EXTRA_LAXNESS, 0.5);
             sendOrderedBroadcast(scoreIntent, null, new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
@@ -269,16 +269,16 @@ public class StudyActivity extends AppCompatActivity {
                     message.append("\n");
                     switch (getResultCode()) {
                         case RESULT_OK:
-                            double score = getResultExtras(true).getDouble(BiometricsManager.BROADCAST_EXTRA_SCORE);
-                            if (score < 1) {
-                                message.append(getResources().getString(R.string.study_passwordresult_correct_user, score));
+                            int score = getResultExtras(true).getInt(BiometricsManager.BROADCAST_EXTRA_RESULT);
+                            if (score > 0) {
+                                message.append(getResources().getString(R.string.study_passwordresult_correct_user));
                             } else {
-                                message.append(getResources().getString(R.string.study_passwordresult_correct_impostor, 1 - score));
+                                message.append(getResources().getString(R.string.study_passwordresult_correct_impostor));
                             }
                             lastLogin.set(SimpleDateFormat.getDateTimeInstance().format(new Date()));
                             break;
                         case RESULT_CANCELED:
-                            switch ((int)getResultExtras(false).getDouble(BiometricsManager.BROADCAST_EXTRA_SCORE)) {
+                            switch (getResultExtras(false).getInt(BiometricsManager.BROADCAST_EXTRA_RESULT)) {
                                 case (int)BiometricsManager.SCORE_NOT_ENOUGH_DATA:
                                     message.append(getResources().getString(R.string.study_passwordresult_correct_nodata));
                                     if (isCaptureMode.get()) {

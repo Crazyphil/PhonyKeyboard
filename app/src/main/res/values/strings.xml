@@ -744,6 +744,6 @@ Tip: You can download and remove dictionaries by going to &lt;b>Language &amp; i
     <string name="study_passwordresult_correct_nodata">Your biometric profile is not complete yet.</string>
     <string name="study_passwordresult_correct_failed">Please type fluently to enable biometric verification.</string>
     <string name="study_passwordresult_correct_disabled">Capturing biometric data in this app is disabled by policy.</string>
-    <string name="study_passwordresult_correct_user">User, you scored %1$.2f.</string>
-    <string name="study_passwordresult_correct_impostor">Impostor, you scored %1$.2f.</string>
+    <string name="study_passwordresult_correct_user">You, fine Sir, are a user.</string>
+    <string name="study_passwordresult_correct_impostor">You, Sir, are an impostor!</string>
 </resources>

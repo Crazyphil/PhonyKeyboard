@@ -69,7 +69,7 @@ public class CaptureClassifier extends Classifier {
     }
 
     @Override
-    public double getScore() {
+    public double getScore(double laxness) {
         if (!calculatedScore) {
             if (invalidData) {
                 score = BiometricsManager.SCORE_CAPTURING_ERROR;
@@ -198,7 +198,7 @@ public class CaptureClassifier extends Classifier {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         situation = which;
-                        getScore();
+                        getScore(0.5);
 
                         if (listener != null) {
                             listener.onUserDataCollected();
